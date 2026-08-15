@@ -1,0 +1,37 @@
+# ===== Gradle =====
+**/.gradle/
+**/build/
+**/out/
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# ===== Local binary dependencies (extracted via paperclip, not needed in git) =====
+Plugins/libs/
+Plugins/1.21.11/libs/
+Plugins/1.21.11/patchwork/
+
+# ===== Local workspace / cloned dependency sources =====
+.slim/
+
+# ===== Secrets - DO NOT COMMIT =====
+Secret.env
+
+# ===== Scratch / temp / log files =====
+tmp-*.txt
+*.log
+replay_pid*.log
+build794.json
+build130.json
+build130-full.json
+paper16.json
+tmp-builds.json
+
+# ===== OS =====
+Thumbs.db
+.DS_Store

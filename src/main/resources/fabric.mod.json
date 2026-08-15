@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "carpetplayers",
+  "version": "${version}",
+  "name": "Carpet Players",
+  "description": "Spawns intelligent FakePlayer bots using the Carpet Mod API with interactive behavior, item usage and advanced PvP mechanics for Minecraft 1.16.5.",
+  "authors": [
+    "Hidayat3911"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.carpetplayers.CarpetPlayersMod"
+    ]
+  },
+  "mixins": [
+    "carpetplayers.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.7.1",
+    "fabric": "*",
+    "minecraft": "1.16.x",
+    "carpet": "*"
+  },
+  "recommends": {
+    "carpet-extra": "*"
+  }
+}

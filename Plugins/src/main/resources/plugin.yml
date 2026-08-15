@@ -1,0 +1,18 @@
+name: CarpetPlayers
+version: 1.0.0
+main: com.carpetplayers.CarpetPlayersPlugin
+api-version: 1.16
+author: Hidayat3911
+description: Spawns intelligent fake player bots with interactive behavior, item usage and advanced PvP mechanics for Minecraft 1.16.5 (Paper/Spigot plugin port).
+
+commands:
+  carpetplayers:
+    description: Main command for Carpet Players plugin
+    usage: /carpetplayers <subcommand>
+    permission: carpetplayers.admin
+    aliases: [cp, cpbot]
+
+permissions:
+  carpetplayers.admin:
+    description: Access to all Carpet Players commands
+    default: op

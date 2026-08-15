@@ -1,0 +1,23 @@
+name: CarpetPlayers
+version: '${version}'
+main: com.carpetplayers.CarpetPlayersPlugin
+api-version: '1.16'
+authors: [CarpetPlayers]
+description: AI Minecraft bot plugin for Paper 1.21.11 with ViaVersion/ViaBackwards support
+website: https://github.com/CarpetPlayers
+softdepend: [ViaVersion, ViaBackwards, WorldEdit]
+
+commands:
+  carpetplayers:
+    description: Main command for CarpetPlayers
+    usage: /carpetplayers <spawn|pvp|ai|control|release|remove|list|kit|useitem|interactive>
+    aliases: [cp, carpet]
+    permission: carpetplayers.admin
+
+permissions:
+  carpetplayers.admin:
+    description: Full access to CarpetPlayers
+    default: op
+  carpetplayers.ai:
+    description: Access to AI commands
+    default: op
