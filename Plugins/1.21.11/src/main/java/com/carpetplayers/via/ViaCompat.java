@@ -8,23 +8,23 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 
 /**
- * Helper integrasi ViaVersion/ViaBackwards.
- * Mendeteksi versi protokol client yang sebenarnya (misal 1.16.5 join server 1.21.11
- * lewat ViaBackwards) sehingga plugin/AI bisa beradaptasi terhadap versi client.
+ * ViaVersion/ViaBackwards integration helper.
+ * Detects the actual client protocol version (e.g. a 1.16.5 client joining a 1.21.11
+ * server through ViaBackwards) so the plugin/AI can adapt to the client version.
  */
 public final class ViaCompat {
 
     private ViaCompat() {
     }
 
-    /** true jika ViaVersion terpasang dan API tersedia. */
+    /** true if ViaVersion is installed and its API is available. */
     public static boolean isAvailable() {
         return Bukkit.getPluginManager().getPlugin("ViaVersion") != null;
     }
 
     /**
-     * Versi protokol client (int, misal 754 = 1.16.5, 774 = 1.21.11).
-     * 0 jika ViaVersion tidak tersedia atau player belum ter-inject.
+     * Client protocol version (int, e.g. 754 = 1.16.5, 774 = 1.21.11).
+     * 0 if ViaVersion is unavailable or the player has not been injected yet.
      */
     public static int getProtocolVersion(Player player) {
         if (!isAvailable() || player == null) {
@@ -38,7 +38,7 @@ public final class ViaCompat {
     }
 
     /**
-     * Versi protokol client berdasarkan UUID (aman dipanggil dari thread mana pun).
+     * Client protocol version by UUID (safe to call from any thread).
      */
     public static int getProtocolVersion(UUID uuid) {
         if (!isAvailable() || uuid == null) {
@@ -52,8 +52,8 @@ public final class ViaCompat {
     }
 
     /**
-     * Nama versi client yang terbaca (misal "1.16.5", "1.21.11").
-     * "unknown" jika tidak terdeteksi.
+     * Readable client version name (e.g. "1.16.5", "1.21.11").
+     * "unknown" if it cannot be detected.
      */
     public static String getClientVersionName(Player player) {
         if (!isAvailable() || player == null) {
@@ -67,13 +67,13 @@ public final class ViaCompat {
         }
     }
 
-    /** true jika client lebih lama dari versi server (pakai ViaBackwards). */
+    /** true if the client is older than the server version (uses ViaBackwards). */
     public static boolean isLegacyClient(Player player) {
         int protocol = getProtocolVersion(player);
         if (protocol == 0) {
             return false;
         }
-        // 767 = 1.21.0; di bawah itu dianggap versi lama vs server 1.21.11
+        // 767 = 1.21.0; anything below is considered a legacy version vs the 1.21.11 server
         return protocol < 767;
     }
 }

@@ -34,8 +34,8 @@ public abstract class LivingEntityMixin {
                     && AIProviderManager.instance().isDefensiveEnabled()) {
                 String attackerName = attacker.getName().getString();
                 AIController.runChat(brain.getBotName(),
-                        "Kamu baru saja diserang oleh pemain " + attackerName
-                                + ". Bereaksilah sesuai keadaanmu (bisa membalas, kabur, atau meminta bantuan).");
+                        "You were just attacked by player " + attackerName
+                                + ". React according to your situation (you can fight back, flee, or ask for help).");
             }
         }
     }

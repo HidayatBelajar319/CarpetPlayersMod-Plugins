@@ -38,11 +38,11 @@ public class BotBrain {
     }
 
     private static final String[] CHAT_MESSAGES = {
-            "Halo!",
-            "Apa kabar?",
-            "Cuacanya bagus ya",
-            "Ayo bertarung!",
-            "Aku butuh makanan"
+            "Hello!",
+            "How are you?",
+            "Nice weather, huh?",
+            "Let's fight!",
+            "I need food"
     };
 
     protected final FakePlayer bot;
@@ -94,7 +94,7 @@ public class BotBrain {
     }
 
     public String getBotName() {
-        // Entity.getName() di Mojang-mapped 1.21.11 mengembalikan Component -> ambil teks String-nya.
+        // Entity.getName() in Mojang-mapped 1.21.11 returns a Component -> extract its String text.
         return bot.getName().getString();
     }
 
@@ -267,22 +267,22 @@ public class BotBrain {
     }
 
     /**
-     * Menjalankan command apa pun atas nama bot (seolah bot mengetik command).
-     * Untuk command "help", kembalikan daftar command yang tersedia agar AI
-     * bisa belajar command apa saja yang bisa dijalankan di server ini.
+     * Runs any command on behalf of the bot (as if the bot typed the command).
+     * For the "help" command, return the list of available commands so the AI
+     * can learn which commands can be run on this server.
      */
     public String aiRunCommand(String command) {
         if (command == null || command.trim().isEmpty()) {
-            return "Command kosong";
+            return "Empty command";
         }
         String cmd = command.trim();
         if (cmd.startsWith("/")) {
             cmd = cmd.substring(1);
         }
-        // Deteksi /help: beri AI daftar command yang tersedia (bukan output mentah client)
+        // Detect /help: give the AI the list of available commands (not raw client output)
         String lower = cmd.toLowerCase(Locale.ROOT);
         if (lower.equals("help") || lower.startsWith("help ")) {
-            StringBuilder sb = new StringBuilder("Command yang tersedia: ");
+            StringBuilder sb = new StringBuilder("Available commands: ");
             for (String name : Bukkit.getCommandMap().getKnownCommands().keySet()) {
                 if (name != null && !name.isEmpty() && !name.contains(":")) {
                     sb.append('/').append(name).append(' ');
@@ -292,9 +292,9 @@ public class BotBrain {
         }
         try {
             boolean ok = bot.getBukkitPlayer().performCommand(cmd);
-            return ok ? "Command dijalankan: /" + cmd : "Gagal menjalankan command: /" + cmd;
+            return ok ? "Command executed: /" + cmd : "Failed to execute command: /" + cmd;
         } catch (Exception e) {
-            return "Error menjalankan command /" + cmd + ": "
+            return "Error executing command /" + cmd + ": "
                     + (e.getMessage() != null ? e.getMessage() : e.toString());
         }
     }
@@ -929,38 +929,33 @@ public class BotBrain {
     public void handleChatCommand(String command) {
         switch (command) {
             case "follow":
-            case "ikut":
                 state = BotState.FOLLOW;
-                pendingReply = "Oke, aku ikut kamu!";
+                pendingReply = "Okay, I'm following you!";
                 break;
             case "stop":
-            case "berhenti":
-            case "diam":
                 state = BotState.CHILL;
-                pendingReply = "Oke, aku diam.";
+                pendingReply = "Okay, I'll stay still.";
                 break;
             case "pvp":
-            case "bertarung":
+            case "fight":
                 state = BotState.PVP;
-                pendingReply = "Oke, aku siap bertarung!";
+                pendingReply = "Okay, I'm ready to fight!";
                 break;
             case "chill":
-            case "santai":
                 state = BotState.CHILL;
-                pendingReply = "Oke, aku santai dulu.";
+                pendingReply = "Okay, I'll chill for now.";
                 break;
             case "wander":
-            case "jalan":
                 state = BotState.WANDER;
-                pendingReply = "Oke, aku jalan-jalan.";
+                pendingReply = "Okay, I'll take a walk.";
                 break;
-            case "makan":
+            case "eat":
                 state = BotState.EAT;
-                pendingReply = "Oke, aku makan dulu.";
+                pendingReply = "Okay, I'll eat first.";
                 break;
             case "menu":
             default:
-                pendingReply = "Menu ku: follow, wander, pvp, chill, makan";
+                pendingReply = "My menu: follow, wander, pvp, chill, eat";
                 break;
         }
         if (ModConfig.instance.debugLogging) {
@@ -986,39 +981,39 @@ public class BotBrain {
         this.attackCooldown = 0;
     }
 
-    // ============ Helper akses NMS (Mojang-mapped 1.21.11) ============
+    // ============ NMS access helpers (Mojang-mapped 1.21.11) ============
 
     /**
-     * Akses ServerPlayerGameMode (pengganti PlayerInteractManager versi lama).
-     * Field public final di ServerPlayer; CraftPlayer.getHandle() -> ServerPlayer.
+     * Access ServerPlayerGameMode (replacement for the old PlayerInteractManager).
+     * Public final field on ServerPlayer; CraftPlayer.getHandle() -> ServerPlayer.
      */
     protected ServerPlayerGameMode gameMode() {
         return bot.getBukkitPlayer().getHandle().gameMode;
     }
 
     /**
-     * Pengganti playerInteractManager.a(...) / useItem lama: pakai item di tangan utama.
+     * Replacement for the old playerInteractManager.a(...) / useItem: use the item in the main hand.
      */
     protected void useItemMainHand() {
         gameMode().useItem(bot, bot.level(), bot.getItemInMainHand(), InteractionHand.MAIN_HAND);
     }
 
     /**
-     * Pengganti playerInteractManager.breakBlock(BlockPos) lama — menambang blok sebagai player survival.
+     * Replacement for the old playerInteractManager.breakBlock(BlockPos) — mines a block as a survival player.
      */
     protected void breakBlockAt(BlockPos pos) {
         gameMode().destroyBlock(pos);
     }
 
     /**
-     * Pengganti field Inventory.itemInHandIndex lama — slot hotbar aktif (setter).
+     * Replacement for the old Inventory.itemInHandIndex field — active hotbar slot (setter).
      */
     protected void setSelectedSlot(int slot) {
         bot.getInventory().setSelectedSlot(slot);
     }
 
     /**
-     * Pengganti field Inventory.itemInHandIndex lama — baca slot hotbar aktif.
+     * Replacement for the old Inventory.itemInHandIndex field — read the active hotbar slot.
      */
     protected int getSelectedSlot() {
         return bot.getInventory().getSelectedSlot();

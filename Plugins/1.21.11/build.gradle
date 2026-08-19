@@ -18,10 +18,10 @@ repositories {
 dependencies {
     compileOnly files('libs/paper-api-1.21.11.jar')
     compileOnly files('libs/paper-server-1.21.11.jar')
-    // ViaVersion API — deteksi versi protokol client (Stage 2)
+    // ViaVersion API - detects the client protocol version (Stage 2)
     compileOnly files('libs/ViaVersion-5.11.0.jar')
-    // Paper 1.21.x memisahkan library runtime dari server jar (tidak fat jar).
-    // Libraries ini di-extract paperclip ke folder ini; hanya dibutuhkan saat compile.
+    // Paper 1.21.x separates runtime libraries from the server jar (no fat jar).
+    // Paperclip extracts these libraries into this folder; they are only needed at compile time.
     compileOnly fileTree(dir: 'patchwork/libraries', include: '**/*.jar')
 }
 

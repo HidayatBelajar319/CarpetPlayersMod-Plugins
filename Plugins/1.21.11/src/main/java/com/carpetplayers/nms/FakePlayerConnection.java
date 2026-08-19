@@ -12,8 +12,8 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 
 /**
- * Koneksi palsu untuk bot. Semua packet yang menuju "klien" bot diabaikan
- * sehingga bot tidak crash ketika world mencoba mengirim data ke pemain.
+ * Fake connection for bots. All packets destined for the bot's "client" are ignored
+ * so the bot does not crash when the world tries to send data to the player.
  */
 public class FakePlayerConnection extends ServerGamePacketListenerImpl {
 
@@ -26,12 +26,12 @@ public class FakePlayerConnection extends ServerGamePacketListenerImpl {
 
     @Override
     public void send(Packet<?> packet) {
-        // no-op: bot tidak punya klien sungguhan
+        // no-op: the bot has no real client
     }
 
     @Override
     public void disconnect(Component reason) {
-        // no-op: jangan biarkan server mengeluarkan bot dari daftar player
+        // no-op: don't let the server remove the bot from the player list
     }
 
     @Override

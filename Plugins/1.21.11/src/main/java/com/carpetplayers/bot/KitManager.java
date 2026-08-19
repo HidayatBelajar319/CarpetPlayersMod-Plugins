@@ -21,8 +21,8 @@ public final class KitManager {
     }
 
     /**
-     * Melengkapi bot dengan kit PvP yang dipilih.
-     * @return true jika kit dikenal dan berhasil dipasang, false jika tidak dikenal.
+     * Equips the bot with the selected PvP kit.
+     * @return true if the kit is known and was equipped successfully, false if it is unknown.
      */
     public static boolean applyKit(BotBrain bot, String kitName) {
         if (bot == null || kitName == null) {
@@ -107,7 +107,7 @@ public final class KitManager {
 
     private static void addSplashHealthPotions(BotBrain bot, int count) {
         for (int i = 0; i < count; i++) {
-            // Potion via Bukkit API (potion kini DataComponent) — paling tahan versi.
+            // Potion via Bukkit API (potions are now DataComponents) - the most version-proof approach.
             org.bukkit.inventory.ItemStack potion = new org.bukkit.inventory.ItemStack(Material.SPLASH_POTION, 1);
             PotionMeta meta = (PotionMeta) potion.getItemMeta();
             if (meta != null) {
@@ -148,8 +148,8 @@ public final class KitManager {
     }
 
     /**
-     * Enchant via Bukkit API (Enchantment kini registry Holder<Enchantment> + DataComponents).
-     * Convert NMS -> Bukkit, pasang ItemMeta.addEnchant, lalu kembali ke NMS.
+     * Enchant via Bukkit API (Enchantment is now a registry Holder<Enchantment> + DataComponents).
+     * Convert NMS -> Bukkit, apply ItemMeta.addEnchant, then convert back to NMS.
      */
     private static ItemStack enchanted(ItemStack stack, Map<Enchantment, Integer> enchantments) {
         if (enchantments != null && !enchantments.isEmpty()) {

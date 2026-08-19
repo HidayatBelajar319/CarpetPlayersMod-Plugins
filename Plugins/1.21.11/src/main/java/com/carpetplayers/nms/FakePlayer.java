@@ -20,14 +20,14 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import java.util.Collection;
 
 /**
- * Entitas player palsu berbasis NMS Paper 1.21.11 (Mojang-mapped). Bertindak seperti
- * player sungguhan untuk keperluan PvP dan interaksi, namun menggunakan koneksi palsu.
+ * Fake player entity based on Paper 1.21.11 NMS (Mojang-mapped). Behaves like a
+ * real player for PvP and interaction purposes, but uses a fake connection.
  */
 public class FakePlayer extends ServerPlayer {
 
     public boolean isFake = true;
 
-    // Input movement yang dikontrol bot engine (di-reset tiap tick oleh world).
+    // Movement input controlled by the bot engine (reset every tick by the world).
     private float inputForward;
     private float inputStrafe;
     private boolean inputJump;
@@ -35,31 +35,31 @@ public class FakePlayer extends ServerPlayer {
     public FakePlayer(MinecraftServer server, ServerLevel world, GameProfile profile) {
         super(server, world, profile, ClientInformation.createDefault());
         setupDummyConnection(server);
-        // Ctor ServerGamePacketListenerImpl menimpa level player ke overworld
-        // (player.setServerLevel(server.overworld())). Kembalikan ke world target
-        // agar registrasi & despawn konsisten dengan world tempat bot di-spawn.
+        // The ServerGamePacketListenerImpl constructor overrides the player level to overworld
+        // (player.setServerLevel(server.overworld())). Restore the target world so registration
+        // and despawn stay consistent with the world where the bot was spawned.
         this.setServerLevel(world);
     }
 
     private void setupDummyConnection(MinecraftServer server) {
         try {
-            // Catatan: nama sederhana "Connection" di-shadow oleh nested type
-            // WaypointTransmitter.Connection (diwariskan ServerPlayer), jadi
-            // wajib pakai nama berkualifikasi penuh di sini.
+            // Note: the simple name "Connection" is shadowed by the nested type
+            // WaypointTransmitter.Connection (inherited by ServerPlayer), so the
+            // fully qualified name must be used here.
             net.minecraft.network.Connection connection = new net.minecraft.network.Connection(PacketFlow.CLIENTBOUND);
             EmbeddedChannel channel = new EmbeddedChannel();
             channel.close().syncUninterruptibly();
             connection.channel = channel;
             this.connection = new FakePlayerConnection(server, connection, this);
         } catch (Exception e) {
-            // Fallback: tanpa koneksi, bot tetap bisa didaftarkan ke world
+            // Fallback: without a connection, the bot can still be registered into the world
         }
     }
 
-    // ============ Helper posisi (warisan dari Entity Mojang-mapped) ============
-    // getX()/getY()/getZ() bersifat final di Entity, dan distanceToSqr(Entity) /
-    // distanceToSqr(double,double,double) sudah tersedia dengan implementasi yang
-    // identik. Kontrak publik terpenuhi lewat pewarisan — tidak perlu dioverride.
+    // ============ Position helpers (inherited from Mojang-mapped Entity) ============
+    // getX()/getY()/getZ() are final on Entity, and distanceToSqr(Entity) /
+    // distanceToSqr(double,double,double) are already available with identical
+    // implementations. The public contract is satisfied through inheritance - no override needed.
 
     // ============ Equipment & movement ============
 
@@ -79,8 +79,8 @@ public class FakePlayer extends ServerPlayer {
     }
 
     public void moveLocation(double x, double y, double z, float yaw, float pitch) {
-        // Entity.moveTo(double,double,double,float,float) TIDAK ada di 1.21.11
-        // (sudah dihapus/renamed). Fallback aman: setPos + setYRot + setXRot + setYHeadRot.
+        // Entity.moveTo(double,double,double,float,float) does NOT exist in 1.21.11
+        // (removed/renamed). Safe fallback: setPos + setYRot + setXRot + setYHeadRot.
         setPos(x, y, z);
         setYRot(yaw);
         setXRot(pitch);
@@ -94,9 +94,8 @@ public class FakePlayer extends ServerPlayer {
     }
 
     /**
-     * Menerapkan gerakan manual berdasarkan input. Tidak bergantung pada
-     * field input internal NMS (xxa/zza tidak tersedia public), sehingga
-     * pergerakan bot deterministik.
+     * Applies manual movement based on input. It does not rely on NMS internal
+     * input fields (xxa/zza are not public), so bot movement is deterministic.
      */
     private void applyManualMovement() {
         if (inputForward == 0.0F && inputStrafe == 0.0F) {
@@ -122,8 +121,8 @@ public class FakePlayer extends ServerPlayer {
     public void sendChat(String message) {
         CraftPlayer bukkit = getBukkitPlayer();
         if (bukkit != null) {
-            // Format & broadcast pesan diserahkan ke plugin/lane pemanggil;
-            // di sini cukup kirim lewat Bukkit agar tidak memakai NMS chat intern.
+            // Message formatting and broadcast are left to the calling plugin/layer;
+            // here it is enough to send through Bukkit to avoid internal NMS chat.
             bukkit.sendMessage("<" + getName().getString() + "> " + message);
         }
     }
@@ -134,7 +133,7 @@ public class FakePlayer extends ServerPlayer {
         return (CraftPlayer) getBukkitEntity();
     }
 
-    // ============ Bantuan misc ============
+    // ============ Misc helpers ============
 
     public boolean isBotAlive() {
         return isAlive();
@@ -144,11 +143,11 @@ public class FakePlayer extends ServerPlayer {
         return getBoundingBox().inflate(radius);
     }
 
-    // ============ Helper yang dipakai BotBrain ============
+    // ============ Helpers used by BotBrain ============
 
     public MinecraftServer getServer() {
-        // Field server di ServerPlayer bersifat private di Mojang-mapped;
-        // MinecraftServer.getServer() (static, diverifikasi) adalah akses yang aman.
+        // The server field on ServerPlayer is private in Mojang-mapped;
+        // MinecraftServer.getServer() (static, verified) is a safe access.
         return MinecraftServer.getServer();
     }
 

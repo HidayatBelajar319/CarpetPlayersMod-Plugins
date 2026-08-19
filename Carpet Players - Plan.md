@@ -1,27 +1,27 @@
-Apakah ada Kode yang Bisa menyatukan beberapa Versi dalam 1 Plugins Jar?
-Seperti CarpetPlayers.jar bisa digunakan di versi 1.16.5 Dan juga 1.21.11 dengan Fitur yang sama tapi Code nya agak berbeda.
-Dan 1.16.5 Dengan 1.21.11 menggunakan API Plugins Via Version Dan Backwards Biar Jika ada Player di Server yang ada Via Plugins(Version dan Backwards artinya).
-Nanti Player itu Akan ditentukan Textures Dan Panggilannya oleh Client Minecraftnya contoh gua Ke 1.16.5 Baru join ke Via Plugisn Server Versi 1.21.11
-Nanti CarpetPlayers Plugins yang akan Kasih tetep liat gua itu Textures Item atau apakah akan di Backport ke 1.16.5 atau Gunain Code yang menggunakna System 1.16.5 dikirim ke Client Miencraft nya baru nanti kalo dia pake nanti akan dikirim ke Client server, Structure nya jadi gini:
-Donwload CarpetPlayers Plugins ---> Server 1.21.11 Via Plugins ---> 1.16.5 Player Join ---> Code nentuin Code yang akan dipakai oleh si 1.16.5 Player ---> Dikirim Ke Client Minecraft 1.16.5 Player nya ---> Dikirim Real-time ke Server pake Code yang udah dikasih tau.
+Is there a way to combine multiple versions into a single Plugins JAR?
+So CarpetPlayers.jar could be used on both version 1.16.5 and 1.21.11 with the same features, even though the code is slightly different.
+Also, 1.16.5 and 1.21.11 use the Via Plugins API (meaning Version and Backwards), so that if there is a player on the server that has Via Plugins.
+Then that player's textures and calls will be determined by their Minecraft client. For example, if I'm on 1.16.5 and just joined a 1.21.11 server via Via Plugins.
+Then CarpetPlayers Plugin would determine whether I still see the item textures, or whether they are backported to 1.16.5, or whether it uses code with the 1.16.5 system sent to my Minecraft client; later, if they use it, it will be sent to the server. The structure would be like this:
+Download CarpetPlayers Plugin ---> 1.21.11 Server via Plugins ---> 1.16.5 Player joins ---> Code determines the code that the 1.16.5 player will use ---> Sent to the 1.16.5 player's Minecraft client ---> Sent in real-time to the server using the code that was provided.
 
-Aku menggunkana Via Plugins di serverku versi 1.21.11.
+I use Via Plugins on my 1.21.11 server.
 
 
-Note:Via Plugins = ViaBackwards Dan ViaVersion
-Tapi jika Via's = Semua Plugins yang di buat oleh Via Group seperti Rewind,Version,Backwards DLL.
+Note: Via Plugins = ViaBackwards and ViaVersion.
+But if "Via's" = all the plugins made by the Via Group such as Rewind, Version, Backwards, etc.
 
-Ah dan juga Kasih AI Bot nya bisa gunain /help biar bisa Deteck semua command dan jalanin command itu.
-Dan Juga AI Bot nya Bisa pake Admin Command dan Custom Admin Command Plugins jika dia mau.
-Tapi jika dia dapat Role yang bisa pake Command itu yak.
+Oh, and also give the AI bot the ability to use /help so it can detect all commands and run those commands.
+Also, the AI bot can use admin commands and custom admin plugin commands if it wants to.
+But only if it has a role that is allowed to use those commands.
 
-Dan juga dia bisa gunakan Item Special seperti Item jika kita pakai WorldEdit Plugins/Mods
-Nanti dia bisa sisa command "//wand" dan sisa Pilih Lokasinya lalu pake command ""//set", "//replace" DLL.
-Pokoknya bisa liat SRC(Source Code) Dari Servernya lalu gunain seperti Player biasa tpai lebih pintar untuk PVP, Item Usage, Dan lain lain.
-Dan juga bisa membantu(ya kali jadi beban kita).
+And also, it can use special items, like the items we use with the WorldEdit plugin/mod.
+Then it could use the "//wand" command and select the location, then use commands like "//set", "//replace", etc.
+Basically, it can look at the server's SRC (source code) and then use it like a normal player, but smarter for PVP, item usage, and so on.
+And it could also help out (well, maybe it would just be a burden to us).
 
-Kamu bisa Donwlaod Source Code Github dari masing masing Plugins yang kamu butuhkan lalu Copy Code yang kamu butuhkan untuk Project ini.
+You can download the GitHub source code of each plugin you need, then copy the code you need for this project.
 
-Ah dan juga AI Bot ini bisa Buat Rank sendiri yak dengan Warna nya juga.
+Oh, and this AI bot can also create its own ranks, complete with their colors.
 
-Usefull Bot :)
+Useful bot :)

@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Konfigurasi utama plugin. Disimpan di plugins/CarpetPlayers/carpetplayers-config.json
- * (setara config dir Fabric). Format file identik dengan versi Fabric.
+ * Main plugin configuration. Stored at plugins/CarpetPlayers/carpetplayers-config.json
+ * (equivalent to the Fabric config dir). File format is identical to the Fabric version.
  */
 public class ModConfig {
     public boolean useItemEnabled = true;

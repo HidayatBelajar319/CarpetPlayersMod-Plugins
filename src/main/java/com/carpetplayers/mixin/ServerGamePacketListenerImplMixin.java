@@ -74,23 +74,23 @@ public abstract class ServerGamePacketListenerImplMixin {
     }
 
     private static String extractCommand(String lower) {
-        if (lower.contains("follow") || lower.contains("ikut")) {
+        if (lower.contains("follow")) {
             return "follow";
         }
-        if (lower.contains("stop") || lower.contains("berhenti") || lower.contains("diam")) {
+        if (lower.contains("stop")) {
             return "stop";
         }
-        if (lower.contains("pvp") || lower.contains("bertarung")) {
+        if (lower.contains("pvp") || lower.contains("fight")) {
             return "pvp";
         }
-        if (lower.contains("chill") || lower.contains("santai")) {
+        if (lower.contains("chill")) {
             return "chill";
         }
-        if (lower.contains("wander") || lower.contains("jalan")) {
+        if (lower.contains("wander")) {
             return "wander";
         }
-        if (lower.contains("makan") || lower.contains("eat")) {
-            return "makan";
+        if (lower.contains("eat")) {
+            return "eat";
         }
         if (lower.contains("menu")) {
             return "menu";
@@ -100,11 +100,11 @@ public abstract class ServerGamePacketListenerImplMixin {
 
     private static String getReply() {
         String[] replies = {
-                "Ya? Kamu memanggilku?",
-                "Halo juga!",
-                "Apa yang bisa kubantu?",
-                "Siap!",
-                "Aku di sini."
+                "Yeah? Did you call me?",
+                "Hello to you too!",
+                "What can I help you with?",
+                "Ready!",
+                "I'm here."
         };
         return replies[(int) (Math.random() * replies.length)];
     }

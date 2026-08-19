@@ -157,7 +157,7 @@ public class OpenAICompatibleProvider extends AbstractAIProvider {
     public boolean testConnection() {
         try {
             List<AIMessage> messages = new ArrayList<>();
-            messages.add(new AIMessage("user", "Katakan: OK"));
+            messages.add(new AIMessage("user", "Say: OK"));
             AIResponse response = sendMessage(messages, getModels().isEmpty() ? "" : getModels().get(0));
             return response != null && response.content != null;
         } catch (AIException e) {

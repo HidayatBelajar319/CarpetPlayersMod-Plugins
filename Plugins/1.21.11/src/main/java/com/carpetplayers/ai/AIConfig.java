@@ -7,11 +7,11 @@ public class AIConfig {
     public boolean enabled = true;
     public boolean aiChatEnabled = true;
     public boolean aiDefensiveEnabled = true;
-    public String systemPrompt = "Kamu adalah otak dari bot Minecraft (FakePlayer) bernama Carpet Players. "
-            + "Kamu mengendalikan gerakan dan aksi bot di dalam game Minecraft 1.16.5. "
-            + "Berbicaralah dengan singkat dan gunakan Bahasa Indonesia. "
-            + "Kamu dapat menyerang musuh, makan, berjalan, melompat, dan menggunakan item. "
-            + "Gunakan tool yang tersedia untuk mengendalikan bot, jangan hanya bercerita.";
+    public String systemPrompt = "You are the brain of a Minecraft bot (FakePlayer) named Carpet Players. "
+            + "You control the bot's movement and actions inside the Minecraft 1.16.5 game. "
+            + "Speak briefly and use English. "
+            + "You can attack enemies, eat, walk, jump, and use items. "
+            + "Use the available tools to control the bot, do not just tell stories.";
     public int requestTimeoutMs = 30000;
     public int failureCooldownMs = 30000;
     public boolean debugLogging = false;

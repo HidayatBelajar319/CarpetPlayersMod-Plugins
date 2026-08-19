@@ -23,28 +23,28 @@ public final class AICommands {
     public static int start(CommandContext<CommandSourceStack> context) {
         AIProviderManager manager = manager(context);
         manager.setEnabled(true);
-        context.getSource().sendSuccess(new TextComponent("[AI] AI diaktifkan. Ketik /carpetplayers ai test untuk mengecek koneksi."), false);
+        context.getSource().sendSuccess(new TextComponent("[AI] AI enabled. Type /carpetplayers ai test to check the connection."), false);
         return 1;
     }
 
     public static int stop(CommandContext<CommandSourceStack> context) {
         AIProviderManager manager = manager(context);
         manager.setEnabled(false);
-        context.getSource().sendSuccess(new TextComponent("[AI] AI dinonaktifkan."), false);
+        context.getSource().sendSuccess(new TextComponent("[AI] AI disabled."), false);
         return 1;
     }
 
     public static int reload(CommandContext<CommandSourceStack> context) {
         AIProviderManager manager = manager(context);
         manager.reload();
-        context.getSource().sendSuccess(new TextComponent("[AI] Konfigurasi provider dimuat ulang."), false);
+        context.getSource().sendSuccess(new TextComponent("[AI] Provider configuration reloaded."), false);
         return 1;
     }
 
     public static int status(CommandContext<CommandSourceStack> context) {
         AIProviderManager manager = manager(context);
         StringBuilder sb = new StringBuilder();
-        sb.append("[AI] Status: ").append(manager.isEnabled() ? "AKTIF" : "MATI").append("\n");
+        sb.append("[AI] Status: ").append(manager.isEnabled() ? "ENABLED" : "DISABLED").append("\n");
         for (AIProvider provider : manager.getProviders()) {
             ProviderHealth health = provider.getHealth();
             sb.append("  - ").append(provider.getName())
@@ -62,7 +62,7 @@ public final class AICommands {
         AIProviderManager manager = manager(context);
         CommandSourceStack source = context.getSource();
         MinecraftServer server = source.getServer();
-        source.sendSuccess(new TextComponent("[AI] Mengetes semua provider..."), false);
+        source.sendSuccess(new TextComponent("[AI] Testing all providers..."), false);
         manager.testProvidersAsync(result -> server.execute(() -> {
             String[] lines = result.split("\n");
             for (String line : lines) {
@@ -75,9 +75,9 @@ public final class AICommands {
     }
 
     /**
-     * Handler untuk subcommand /carpetplayers ai act &lt;botname&gt; &lt;instruction&gt;.
-     * Menjalankan AIController secara async (thread terpisah) dan mengirim hasilnya
-     * kembali ke pengirim perintah.
+     * Handler for the /carpetplayers ai act &lt;botname&gt; &lt;instruction&gt; subcommand.
+     * Runs AIController asynchronously (separate thread) and sends the result
+     * back to the command sender.
      */
     public static int act(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String botName = StringArgumentType.getString(context, "botname");
@@ -85,7 +85,7 @@ public final class AICommands {
         CommandSourceStack source = context.getSource();
         MinecraftServer server = source.getServer();
         manager(context);
-        source.sendSuccess(new TextComponent("[AI] Memproses instruksi untuk bot '" + botName + "'..."), false);
+        source.sendSuccess(new TextComponent("[AI] Processing instruction for bot '" + botName + "'..."), false);
         AIController.run(botName, instruction,
                 result -> {
                     if (server != null) {
@@ -96,56 +96,56 @@ public final class AICommands {
                 },
                 error -> {
                     if (server != null) {
-                        server.execute(() -> sendMessage(context, "[AI] Gagal: " + error));
+                        server.execute(() -> sendMessage(context, "[AI] Failed: " + error));
                     } else {
-                        sendMessage(context, "[AI] Gagal: " + error);
+                        sendMessage(context, "[AI] Failed: " + error);
                     }
                 });
         return 1;
     }
 
     /**
-     * Handler untuk /carpetplayers ai chat &lt;enabled&gt;:
-     * mengaktifkan/menonaktifkan balasan chat AI per bot.
+     * Handler for /carpetplayers ai chat &lt;enabled&gt;:
+     * enables/disables AI chat replies for bots.
      */
     public static int chat(CommandContext<CommandSourceStack> context) {
         AIProviderManager manager = manager(context);
         boolean enabled = BoolArgumentType.getBool(context, "enabled");
         manager.setChatEnabled(enabled);
         context.getSource().sendSuccess(new TextComponent(
-                "[AI] Chat AI " + (enabled ? "diaktifkan" : "dinonaktifkan") + "."), false);
+                "[AI] AI chat " + (enabled ? "enabled" : "disabled") + "."), false);
         return 1;
     }
 
     /**
-     * Handler untuk /carpetplayers ai forget &lt;botname&gt;:
-     * membersihkan memori percakapan sebuah bot.
+     * Handler for /carpetplayers ai forget &lt;botname&gt;:
+     * clears the conversation memory of a bot.
      */
     public static int forget(CommandContext<CommandSourceStack> context) {
         String botName = StringArgumentType.getString(context, "botname");
         AIController.clearMemory(botName);
         context.getSource().sendSuccess(new TextComponent(
-                "[AI] Memori percakapan bot '" + botName + "' dibersihkan."), false);
+                "[AI] Conversation memory for bot '" + botName + "' cleared."), false);
         return 1;
     }
 
     /**
-     * Handler untuk /carpetplayers ai defensive &lt;enabled&gt;:
-     * mengaktifkan/menonaktifkan defensive AI (anti-grief / anti-serangan).
+     * Handler for /carpetplayers ai defensive &lt;enabled&gt;:
+     * enables/disables defensive AI (anti-grief / anti-attack).
      */
     public static int defensive(CommandContext<CommandSourceStack> context) {
         AIProviderManager manager = manager(context);
         boolean enabled = BoolArgumentType.getBool(context, "enabled");
         manager.setDefensiveEnabled(enabled);
         context.getSource().sendSuccess(new TextComponent(
-                "[AI] Defensive AI " + (enabled ? "diaktifkan" : "dinonaktifkan") + "."), false);
+                "[AI] Defensive AI " + (enabled ? "enabled" : "disabled") + "."), false);
         return 1;
     }
 
     /**
-     * Handler untuk perintah set API key provider (misal
-     * /carpetplayers ai key &lt;type&gt; &lt;apikey&gt;). `type` diteruskan dari wiring
-     * perintah (satu literal per tipe provider).
+     * Handler for the provider API key command (e.g.
+     * /carpetplayers ai key &lt;type&gt; &lt;apikey&gt;). `type` is passed from the command
+     * wiring (one literal per provider type).
      */
     public static int providerKey(CommandContext<CommandSourceStack> context, String type) {
         String apiKey = StringArgumentType.getString(context, "apikey");

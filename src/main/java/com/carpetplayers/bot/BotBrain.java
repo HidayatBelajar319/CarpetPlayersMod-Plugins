@@ -21,6 +21,9 @@ import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.server.MinecraftServer;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -34,11 +37,11 @@ public class BotBrain {
     }
 
     private static final String[] CHAT_MESSAGES = {
-            "Halo!",
-            "Apa kabar?",
-            "Cuacanya bagus ya",
-            "Ayo bertarung!",
-            "Aku butuh makanan"
+            "Hello!",
+            "How are you?",
+            "Nice weather, huh?",
+            "Let's fight!",
+            "I need food"
     };
 
     protected final EntityPlayerMPFake bot;
@@ -262,6 +265,39 @@ public class BotBrain {
         actions().setStrafing(0.0F);
         bot.setJumping(false);
         actions().setSneaking(false);
+    }
+
+    /**
+     * Executes a server command as the bot. The command runs with the bot as
+     * the executing entity so permissions, position, and dimension are correct.
+     * Returns the command output text, or an error message.
+     */
+    public String aiRunCommand(String command) {
+        if (command == null || command.isEmpty()) {
+            return "Empty command";
+        }
+        MinecraftServer server = bot.getServer();
+        if (server == null) {
+            return "Server not available";
+        }
+        // Intercept 'help' to return available commands instead
+        if (command.trim().equalsIgnoreCase("help")) {
+            return "Available commands: /help, /gamemode, /give, /tp, /effect, /time, /weather, /difficulty, /kill, /summon, /fill, /setblock, /data, /say, /msg, /tell, /me, /playsound, /particle, /spreadplayers, /clear, /enchant, /experience, /xp, /attribute, /item, /loot, /recipe, /replaceitem, /team, /teammsg, /tm, /trigger, /advancement, /bossbar, /debug, /function, /locate, /marker, /scoreboard, /msg, /w, /tellraw";
+        }
+        // Create a CommandSourceStack from the bot's position for proper context
+        net.minecraft.commands.CommandSourceStack source = bot.createCommandSourceStack();
+        try {
+            // Execute the command synchronously on the server
+            int result = server.getCommands().getDispatcher().execute(command, source);
+            if (result <= 0) {
+                return "Command failed or returned no result: " + command;
+            }
+            return "Command executed: " + command;
+        } catch (CommandSyntaxException e) {
+            return "Command error: " + (e.getMessage() != null ? e.getMessage() : e.toString());
+        } catch (Exception e) {
+            return "Failed to execute command: " + (e.getMessage() != null ? e.getMessage() : e.toString());
+        }
     }
 
     protected void tickAiActions() {
@@ -883,38 +919,33 @@ public class BotBrain {
     public void handleChatCommand(String command) {
         switch (command) {
             case "follow":
-            case "ikut":
                 state = BotState.FOLLOW;
-                pendingReply = "Oke, aku ikut kamu!";
+                pendingReply = "Okay, I'll follow you!";
                 break;
             case "stop":
-            case "berhenti":
-            case "diam":
                 state = BotState.CHILL;
-                pendingReply = "Oke, aku diam.";
+                pendingReply = "Okay, I'll stay put.";
                 break;
             case "pvp":
-            case "bertarung":
+            case "fight":
                 state = BotState.PVP;
-                pendingReply = "Oke, aku siap bertarung!";
+                pendingReply = "Okay, I'm ready to fight!";
                 break;
             case "chill":
-            case "santai":
                 state = BotState.CHILL;
-                pendingReply = "Oke, aku santai dulu.";
+                pendingReply = "Okay, I'll chill for a while.";
                 break;
             case "wander":
-            case "jalan":
                 state = BotState.WANDER;
-                pendingReply = "Oke, aku jalan-jalan.";
+                pendingReply = "Okay, I'll wander around.";
                 break;
-            case "makan":
+            case "eat":
                 state = BotState.EAT;
-                pendingReply = "Oke, aku makan dulu.";
+                pendingReply = "Okay, I'll eat first.";
                 break;
             case "menu":
             default:
-                pendingReply = "Menu ku: follow, wander, pvp, chill, makan";
+                pendingReply = "My commands: follow, wander, pvp, chill, eat";
                 break;
         }
         if (ModConfig.instance.debugLogging) {

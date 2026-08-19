@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -23,40 +25,37 @@ public final class AIController {
     private static final int MAX_REPLY_CHARS = 500;
     private static final Map<UUID, List<AIMessage>> chatMemories = new ConcurrentHashMap<>();
     private static final Map<UUID, List<AIMessage>> actMemories = new ConcurrentHashMap<>();
+    private static final ExecutorService executor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "carpetplayers-ai");
+        t.setDaemon(true);
+        return t;
+    });
 
     private AIController() {
     }
 
     /**
-     * Menjalankan loop tool-calling AI untuk sebuah bot.
-     * Seluruh proses berjalan di thread daemon terpisah sehingga tidak pernah
-     * memblokir server thread. Semua mutasi bot dan semua callback dipanggil
-     * di server thread.
+     * Runs the AI tool-calling loop for a bot.
+     * The whole process runs on a separate daemon thread so it never
+     * blocks the server thread. All bot mutations and all callbacks are invoked
+     * on the server thread.
      */
     public static void run(String botName, String instruction, Consumer<String> onResult, Consumer<String> onError) {
-        Thread controlThread = new Thread(
-                () -> runOnControlThread(botName, instruction, onResult, onError),
-                "carpetplayers-ai-control");
-        controlThread.setDaemon(true);
-        controlThread.start();
+        executor.execute(() -> runOnControlThread(botName, instruction, onResult, onError));
     }
 
     /**
-     * Menjalankan percakapan AI untuk sebuah bot (dengan memori per-bot).
-     * Berjalan di thread daemon terpisah; semua mutasi bot dan broadcast
-     * dipanggil di server thread.
+     * Runs an AI conversation for a bot (with per-bot memory).
+     * Runs on a separate daemon thread; all bot mutations and broadcasts
+     * are invoked on the server thread.
      */
     public static void runChat(String botName, String instruction) {
-        Thread controlThread = new Thread(
-                () -> runChatOnControlThread(botName, instruction),
-                "carpetplayers-ai-chat");
-        controlThread.setDaemon(true);
-        controlThread.start();
+        executor.execute(() -> runChatOnControlThread(botName, instruction));
     }
 
     /**
-     * Membersihkan memori percakapan sebuah bot. No-op jika bot tidak ada.
-     * Aman dipanggil dari server thread (menggunakan ConcurrentHashMap).
+     * Clears the conversation memory of a bot. No-op if the bot does not exist.
+     * Safe to call from the server thread (uses ConcurrentHashMap).
      */
     public static void clearMemory(String botName) {
         BotBrain bot = MinecraftToolManager.findBotByName(botName);
@@ -76,7 +75,7 @@ public final class AIController {
         }
 
         if (bot == null) {
-            deliverResult(server, onError, "Bot " + botName + " tidak ditemukan");
+            deliverResult(server, onError, "Bot " + botName + " not found");
             return;
         }
         UUID key = bot.getUuid();
@@ -84,7 +83,7 @@ public final class AIController {
                 k -> Collections.synchronizedList(new ArrayList<AIMessage>()));
         List<AIMessage> messages = new ArrayList<>(memory);
         if (memory.isEmpty()) {
-            messages.add(AIMessage.user("Bot: " + bot.aiGetStateInfo() + "\nInstruksi pemain: " + instruction));
+            messages.add(AIMessage.user("Bot: " + bot.aiGetStateInfo() + "\nPlayer instruction: " + instruction));
         } else {
             messages.add(AIMessage.user(instruction));
         }
@@ -99,7 +98,7 @@ public final class AIController {
                 AIResponse response = AIProviderManager.instance().sendMessageWithTools(
                         messages, MinecraftToolManager.instance.getTools());
                 if (response == null) {
-                    deliverResult(server, onError, "Respon AI kosong");
+                    deliverResult(server, onError, "Empty AI response");
                     return;
                 }
                 lastContent = response.content != null ? response.content : "";
@@ -115,7 +114,7 @@ public final class AIController {
             }
             if (finalReply.isEmpty()) {
                 finalReply = lastContent.isEmpty()
-                        ? "Selesai (maks iterasi tool call)" : lastContent;
+                        ? "Finished (max tool call iterations)" : lastContent;
             }
             synchronized (memory) {
                 memory.add(AIMessage.user(instruction));
@@ -142,7 +141,7 @@ public final class AIController {
         }
 
         if (!AIProviderManager.instance().isEnabled()) {
-            deliverResult(server, reply -> broadcastChatReply(botName, "AI nonaktif. Ketik /carpetplayers ai start"), null);
+            deliverResult(server, reply -> broadcastChatReply(botName, "AI is disabled. Type /carpetplayers ai start"), null);
             return;
         }
 
@@ -161,7 +160,7 @@ public final class AIController {
                 AIResponse response = AIProviderManager.instance().sendMessageWithTools(
                         messages, MinecraftToolManager.instance.getTools());
                 if (response == null) {
-                    deliverResult(server, r -> broadcastChatReply(botName, "Respon AI kosong"), null);
+                    deliverResult(server, r -> broadcastChatReply(botName, "Empty AI response"), null);
                     return;
                 }
                 reply = response.content != null ? response.content : "";
@@ -175,7 +174,7 @@ public final class AIController {
                 }
             }
             String finalReply = truncateReply(reply.isEmpty()
-                    ? "Selesai (maks iterasi tool call)" : reply);
+                    ? "Finished (max tool call iterations)" : reply);
             deliverResult(server, r -> broadcastChatReply(botName, r), finalReply);
             synchronized (memory) {
                 memory.add(AIMessage.user(instruction));
@@ -186,13 +185,13 @@ public final class AIController {
             }
         } catch (AIException e) {
             deliverResult(server, r -> broadcastChatReply(botName,
-                    "Gagal: " + (e.getMessage() != null ? e.getMessage() : e.toString())), null);
+                    "Failed: " + (e.getMessage() != null ? e.getMessage() : e.toString())), null);
         }
     }
 
     /**
-     * Membuat bot berkata di chat. Harus dipanggil di server thread;
-     * deliverResult sudah memindahkan eksekusi ke server thread.
+     * Makes the bot speak in chat. Must be called on the server thread;
+     * deliverResult already moves execution to the server thread.
      */
     private static void broadcastChatReply(String botName, String reply) {
         BotBrain bot = MinecraftToolManager.findBotByName(botName);
@@ -202,8 +201,8 @@ public final class AIController {
     }
 
     /**
-     * Menjalankan tool di server thread (karena tool memutasi state bot).
-     * Jika server null, dieksekusi langsung di thread kontrol (best-effort).
+     * Executes the tool on the server thread (because tools mutate the bot's state).
+     * If server is null, it is executed directly on the control thread (best-effort).
      */
     private static String executeToolOnServer(MinecraftServer server, BotBrain bot, AIToolCall toolCall) {
         if (server == null) {
@@ -222,25 +221,25 @@ public final class AIController {
         });
         try {
             if (!latch.await(TOOL_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                return "Tool " + toolCall.name + " timeout (" + TOOL_TIMEOUT_SECONDS + " detik)";
+                return "Tool " + toolCall.name + " timeout (" + TOOL_TIMEOUT_SECONDS + " seconds)";
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return "Tool " + toolCall.name + " dibatalkan (interrupt)";
+            return "Tool " + toolCall.name + " cancelled (interrupt)";
         }
-        return truncateToolResult(result[0] != null ? result[0] : "Tool " + toolCall.name + " tidak mengembalikan hasil");
+        return truncateToolResult(result[0] != null ? result[0] : "Tool " + toolCall.name + " returned no result");
     }
 
     private static String truncateToolResult(String s) {
         if (s != null && s.length() > MAX_TOOL_RESULT_CHARS) {
-            return s.substring(0, MAX_TOOL_RESULT_CHARS) + "...(terpotong)";
+            return s.substring(0, MAX_TOOL_RESULT_CHARS) + "...(truncated)";
         }
         return s;
     }
 
     private static String truncateReply(String s) {
         if (s != null && s.length() > MAX_REPLY_CHARS) {
-            return s.substring(0, MAX_REPLY_CHARS) + "...(terpotong)";
+            return s.substring(0, MAX_REPLY_CHARS) + "...(truncated)";
         }
         return s;
     }
@@ -255,5 +254,9 @@ public final class AIController {
         } else {
             callback.accept(msg);
         }
+    }
+
+    public static void shutdown() {
+        executor.shutdownNow();
     }
 }

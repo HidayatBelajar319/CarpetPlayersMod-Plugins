@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Pabrik untuk membuat dan menghapus FakePlayer di server Paper 1.21.11 (Mojang-mapped).
- * Bot didaftarkan ke PlayerList, ServerLevel, dan disiarkan ke semua pemain online
- * lewat packet ADD_PLAYER + AddEntity.
+ * Factory for creating and removing FakePlayers on a Paper 1.21.11 server (Mojang-mapped).
+ * Bots are registered into the PlayerList and ServerLevel, and broadcast to all online
+ * players via ADD_PLAYER + AddEntity packets.
  */
 public final class FakePlayerFactory {
 
@@ -40,11 +40,11 @@ public final class FakePlayerFactory {
         fake.moveLocation(x, y, z, yaw, pitch);
         fake.isFake = true;
 
-        // Registrasi ke server & world
+        // Register into the server & world
         server.getPlayerList().players.add(fake);
         world.addFreshEntity(fake);
 
-        // Broadcast agar client melihat bot
+        // Broadcast so clients can see the bot
         broadcastPacket(new ClientboundPlayerInfoUpdatePacket(
                 ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER, fake));
         broadcastPacket(buildSpawnPacket(fake));
@@ -53,10 +53,11 @@ public final class FakePlayerFactory {
     }
 
     /**
-     * Packet spawn untuk player. Catatan: ClientboundAddPlayerPacket sudah digabung ke
-     * ClientboundAddEntityPacket sejak 1.21.2 — ctor (ServerPlayer) yang disarankan oleh
-     * recon lama TIDAK ADA lagi di 1.21.11. Dipakai ctor mentah (id, uuid, posisi, rotasi,
-     * EntityType.PLAYER, data, movement, yHeadRot) yang independen dari state tracker.
+     * Spawn packet for a player. Note: ClientboundAddPlayerPacket was merged into
+     * ClientboundAddEntityPacket since 1.21.2 - the (ServerPlayer) constructor suggested
+     * by the old recon NO LONGER exists in 1.21.11. The raw constructor (id, uuid, position,
+     * rotation, EntityType.PLAYER, data, movement, yHeadRot) is used, which is independent
+     * of the state tracker.
      */
     private static Packet<?> buildSpawnPacket(FakePlayer fake) {
         return new ClientboundAddEntityPacket(
@@ -74,11 +75,11 @@ public final class FakePlayerFactory {
         ServerLevel world = fake.level(); // ServerPlayer.level() -> ServerLevel
         MinecraftServer server = ((CraftServer) Bukkit.getServer()).getServer();
 
-        // Broadcast penghapusan ke semua pemain online
+        // Broadcast removal to all online players
         broadcastPacket(new ClientboundRemoveEntitiesPacket(fake.getId()));
         broadcastPacket(new ClientboundPlayerInfoRemovePacket(List.of(fake.getUUID())));
 
-        // Hapus dari world & player list
+        // Remove from the world & player list
         if (world != null) {
             world.players().remove(fake);
             fake.discard();
@@ -99,7 +100,7 @@ public final class FakePlayerFactory {
                 }
             }
         }
-        // Fallback: hapus dari playerList bila masih ada
+        // Fallback: remove from the playerList if still present
         MinecraftServer server = ((CraftServer) Bukkit.getServer()).getServer();
         for (int i = server.getPlayerList().players.size() - 1; i >= 0; i--) {
             ServerPlayer p = server.getPlayerList().players.get(i);

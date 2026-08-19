@@ -288,13 +288,13 @@ public final class BotManager {
         String botName = StringArgumentType.getString(context, "botname");
         BotBrain brain = MinecraftToolManager.findBotByName(botName);
         if (brain == null) {
-            context.getSource().sendFailure(new TextComponent("[Kit] Bot tidak ditemukan: " + botName));
+            context.getSource().sendFailure(new TextComponent("[Kit] Bot not found: " + botName));
             return 0;
         }
         boolean ok = KitManager.applyKit(brain, kitName);
         context.getSource().sendSuccess(new TextComponent(
-                ok ? "[Kit] " + kitName + " dipasang ke " + botName
-                        : "[Kit] Kit tidak dikenal: " + kitName), false);
+                ok ? "[Kit] " + kitName + " equipped on " + botName
+                        : "[Kit] Unknown kit: " + kitName), false);
         return ok ? 1 : 0;
     }
 
@@ -363,11 +363,19 @@ public final class BotManager {
         return null;
     }
 
-    private static List<String> getBotNames() {
+    public static List<String> getBotNames() {
         List<String> names = new ArrayList<>();
         for (EntityPlayerMPFake bot : BOTS.values()) {
             names.add(bot.getName().getString());
         }
         return names;
+    }
+
+    /**
+     * Returns true if the server is running as a dedicated server (multiplayer).
+     * Returns false if running as an integrated server (singleplayer).
+     */
+    public static boolean isDedicated(MinecraftServer server) {
+        return server != null && !server.isSingleplayer();
     }
 }

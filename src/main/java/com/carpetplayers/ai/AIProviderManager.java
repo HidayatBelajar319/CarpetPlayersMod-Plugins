@@ -111,9 +111,9 @@ public final class AIProviderManager {
     }
 
     /**
-     * Membuat ProviderConfig dengan default (nama, baseUrl, model, models) untuk
-     * tipe provider yang dikenal. Mengembalikan null jika tipe tidak dikenal.
-     * priority/enabled memakai default ProviderConfig (10 / true).
+     * Creates a ProviderConfig with defaults (name, baseUrl, model, models) for
+     * a known provider type. Returns null if the type is unknown.
+     * priority/enabled use the ProviderConfig defaults (10 / true).
      */
     private ProviderConfig defaultProvider(String type) {
         String t = type != null ? type.toLowerCase().trim() : "";
@@ -217,14 +217,14 @@ public final class AIProviderManager {
     }
 
     /**
-     * Menetapkan API key untuk tipe provider. Jika provider sudah terdaftar,
-     * hanya diperbarui; jika belum, dibuat dengan default (nama/baseUrl/model)
-     * lalu ditambahkan. Provider langsung aktif kembali (rebuildProviders).
-     * Mengembalikan pesan status siap ditampilkan ke pemain.
+     * Sets the API key for a provider type. If the provider is already registered,
+     * it is only updated; if not, it is created with defaults (name/baseUrl/model)
+     * and added. The provider is immediately active again (rebuildProviders).
+     * Returns a status message ready to show to the player.
      */
     public String setProviderApiKey(String type, String apiKey) {
         if (type == null || type.trim().isEmpty()) {
-            return "Tipe provider tidak valid.";
+            return "Invalid provider type.";
         }
         String normalizedType = type.trim().toLowerCase();
         for (ProviderConfig providerConfig : config.providers) {
@@ -233,20 +233,20 @@ public final class AIProviderManager {
                 providerConfig.apiKey = apiKey != null ? apiKey : "";
                 save();
                 rebuildProviders();
-                return "[AI] API key untuk " + providerConfig.name + " diperbarui. Model: "
+                return "[AI] API key for " + providerConfig.name + " updated. Model: "
                         + providerConfig.model + ".";
             }
         }
         ProviderConfig provider = defaultProvider(normalizedType);
         if (provider == null) {
-            return "Tipe provider tidak dikenal: " + type
-                    + " (opsi: openai, gemini, openrouter, groq, local).";
+            return "Unknown provider type: " + type
+                    + " (options: openai, gemini, openrouter, groq, local).";
         }
         provider.apiKey = apiKey != null ? apiKey : "";
         config.providers.add(provider);
         save();
         rebuildProviders();
-        return "[AI] Provider " + provider.name + " ditambahkan. API key tersimpan. Model default: "
+        return "[AI] Provider " + provider.name + " added. API key saved. Default model: "
                 + provider.model + ".";
     }
 
@@ -264,8 +264,8 @@ public final class AIProviderManager {
     }
 
     /**
-     * Memastikan pesan system (dari config) ada di depan daftar pesan.
-     * Jika pemanggil sudah menyertakan pesan system sendiri, tidak ditambah ulang.
+     * Ensures the system message (from config) is at the front of the message list.
+     * If the caller already included its own system message, it is not added again.
      */
     public List<AIMessage> withSystemPrompt(List<AIMessage> messages) {
         if (messages != null && !messages.isEmpty() && "system".equals(messages.get(0).role)) {
@@ -385,17 +385,17 @@ public final class AIProviderManager {
         executor.submit(() -> {
             StringBuilder sb = new StringBuilder();
             if (providers.isEmpty()) {
-                sb.append("Tidak ada provider terkonfigurasi. Edit config/minecraft-ai/providers.json");
+                sb.append("No providers configured. Edit config/minecraft-ai/providers.json");
             } else {
                 for (AIProvider provider : providers) {
                     String status;
                     if (provider.getModels().isEmpty()) {
-                        status = "tidak ada model";
+                        status = "no models";
                     } else {
                         long start = System.currentTimeMillis();
                         boolean ok = provider.testConnection();
                         long elapsed = System.currentTimeMillis() - start;
-                        status = (ok ? "OK (" : "GAGAL (") + elapsed + " ms)";
+                        status = (ok ? "OK (" : "FAILED (") + elapsed + " ms)";
                         if (ok) {
                             provider.markSuccess();
                         } else {

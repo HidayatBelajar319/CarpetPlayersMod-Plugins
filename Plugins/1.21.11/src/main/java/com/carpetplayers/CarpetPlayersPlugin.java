@@ -9,8 +9,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Entry point plugin Paper/Spigot 1.21.11 — port dari mod Fabric "Carpet Players".
- * Terdeteksi sebagai plugin via plugin.yml dan JavaPlugin.
+ * Paper/Spigot 1.21.11 plugin entry point - a port of the Fabric mod "Carpet Players".
+ * Detected as a plugin via plugin.yml and JavaPlugin.
  */
 public final class CarpetPlayersPlugin extends JavaPlugin {
     public static final String MOD_ID = "carpetplayers";
@@ -19,13 +19,13 @@ public final class CarpetPlayersPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        // Load/buat file konfigurasi langsung saat startup (server-side),
-        // sehingga file config tersedia sebelum player join.
+        // Load/create the config file right at startup (server-side),
+        // so the config file is available before players join.
         ModConfig.ensureLoaded();
         AIProviderManager.instance().ensureLoaded();
         BotManager.registerCommands(this);
         BotManager.registerEvents(this);
-        // Tick 20x/detik di server thread, setara ServerTickEvents.END_SERVER_TICK.
+        // Tick 20x/second on the server thread, equivalent to ServerTickEvents.END_SERVER_TICK.
         getServer().getScheduler().runTaskTimer(this, BotManager::tick, 0L, 1L);
         getLogger().info("Carpet Players plugin loaded!");
     }

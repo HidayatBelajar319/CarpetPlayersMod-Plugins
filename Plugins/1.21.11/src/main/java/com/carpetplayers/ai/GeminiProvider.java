@@ -132,9 +132,9 @@ public class GeminiProvider extends AbstractAIProvider {
     }
 
     /**
-     * Membangun payload generateContent dengan dukungan function calling Gemini.
-     * Pesan system pertama dipindah ke systemInstruction; pesan tool diterjemahkan
-     * menjadi functionResponse dengan resolusi nama dari toolCalls sebelumnya.
+     * Builds the generateContent payload with Gemini function-calling support.
+     * The first system message is moved to systemInstruction; tool messages are
+     * translated into functionResponse with name resolution from previous toolCalls.
      */
     private String buildGenerateContentPayload(List<AIMessage> messages, List<AITool> tools) {
         JsonObject payload = new JsonObject();
@@ -251,7 +251,7 @@ public class GeminiProvider extends AbstractAIProvider {
     public boolean testConnection() {
         try {
             List<AIMessage> messages = new ArrayList<>();
-            messages.add(new AIMessage("user", "Katakan: OK"));
+            messages.add(new AIMessage("user", "Say: OK"));
             AIResponse response = sendMessage(messages, getModels().isEmpty() ? "" : getModels().get(0));
             return response != null && response.content != null;
         } catch (AIException e) {

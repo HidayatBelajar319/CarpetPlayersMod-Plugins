@@ -58,7 +58,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("carpetplayers.admin")) {
-            sender.sendMessage("§cKamu tidak punya akses ke perintah ini.");
+            sender.sendMessage("§cYou do not have permission to use this command.");
             return true;
         }
         if (args.length == 0) {
@@ -89,47 +89,46 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             case "protocol":
                 return cmdProtocol(sender, args);
             default:
-                sender.sendMessage("§cSubperintah tidak dikenal: " + args[0]);
+                sender.sendMessage("§cUnknown subcommand: " + args[0]);
                 return true;
         }
     }
 
     private boolean requirePlayer(CommandSender sender) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("§cPerintah ini hanya bisa dijalankan oleh pemain.");
+            sender.sendMessage("§cThis command can only be run by a player.");
             return false;
         }
         return true;
     }
 
     /**
-     * /carpetplayers protocol [player] — tampilkan versi protokol client.
-     * Memanfaatkan ViaVersion untuk mendeteksi client lama (misal 1.16.5
-     * yang join lewat ViaBackwards).
+     * /carpetplayers protocol [player] - show the client protocol version.
+     * Uses ViaVersion to detect legacy clients (e.g. 1.16.5 joining through ViaBackwards).
      */
     private boolean cmdProtocol(CommandSender sender, String[] args) {
         Player target;
         if (args.length >= 2) {
             target = Bukkit.getPlayer(args[1]);
             if (target == null) {
-                sender.sendMessage("§cPemain tidak ditemukan: " + args[1]);
+                sender.sendMessage("§cPlayer not found: " + args[1]);
                 return true;
             }
         } else if (sender instanceof Player) {
             target = (Player) sender;
         } else {
-            sender.sendMessage("§cGunakan: /carpetplayers protocol <player>");
+            sender.sendMessage("§cUsage: /carpetplayers protocol <player>");
             return true;
         }
         if (!com.carpetplayers.via.ViaCompat.isAvailable()) {
-            sender.sendMessage("§eViaVersion tidak terpasang — protokol client tidak terdeteksi.");
+            sender.sendMessage("§eViaVersion is not installed - client protocol cannot be detected.");
             return true;
         }
         int protocol = com.carpetplayers.via.ViaCompat.getProtocolVersion(target);
         String name = com.carpetplayers.via.ViaCompat.getClientVersionName(target);
         boolean legacy = com.carpetplayers.via.ViaCompat.isLegacyClient(target);
-        sender.sendMessage("§f" + target.getName() + " → protokol §e" + protocol
-                + "§f (" + name + ")" + (legacy ? " §7[client lama/ViaBackwards]" : " §a[versi modern]"));
+        sender.sendMessage("§f" + target.getName() + " -> protocol §e" + protocol
+                + "§f (" + name + ")" + (legacy ? " §7[legacy client/ViaBackwards]" : " §a[modern version]"));
         return true;
     }
 
@@ -138,7 +137,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage("§cGunakan: /carpetplayers spawn <jumlah>");
+            sender.sendMessage("§cUsage: /carpetplayers spawn <count>");
             return true;
         }
         try {
@@ -147,19 +146,19 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             Player player = (Player) sender;
             List<String> spawned = spawnBots(player, count, false);
             if (spawned.isEmpty()) {
-                sender.sendMessage("§cTidak bisa spawn bot: maksimum " + ModConfig.instance.maxBots + " tercapai");
+                sender.sendMessage("§cCannot spawn bots: maximum " + ModConfig.instance.maxBots + " reached");
             } else {
                 sender.sendMessage("§aSpawned " + spawned.size() + " bot(s): " + String.join(", ", spawned));
             }
         } catch (NumberFormatException e) {
-            sender.sendMessage("§cJumlah harus angka.");
+            sender.sendMessage("§cThe count must be a number.");
         }
         return true;
     }
 
     private boolean cmdPvp(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§fCarpet PvP: w-tap/a-tap/s-tap/d-tap/multipleweapons/spawn <jumlah>");
+            sender.sendMessage("§fCarpet PvP: w-tap/a-tap/s-tap/d-tap/multipleweapons/spawn <count>");
             return true;
         }
         switch (args[1].toLowerCase()) {
@@ -168,7 +167,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                     return true;
                 }
                 if (args.length < 3) {
-                    sender.sendMessage("§cGunakan: /carpetplayers pvp spawn <jumlah>");
+                    sender.sendMessage("§cUsage: /carpetplayers pvp spawn <count>");
                     return true;
                 }
                 try {
@@ -176,18 +175,18 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                     count = Math.max(1, Math.min(100, count));
                     List<String> spawned = spawnBots((Player) sender, count, true);
                     if (spawned.isEmpty()) {
-                        sender.sendMessage("§cTidak bisa spawn bot PvP: maksimum " + ModConfig.instance.maxBots + " tercapai");
+                        sender.sendMessage("§cCannot spawn PvP bots: maximum " + ModConfig.instance.maxBots + " reached");
                     } else {
                         sender.sendMessage("§aSpawned " + spawned.size() + " PvP bot(s): " + String.join(", ", spawned));
                     }
                 } catch (NumberFormatException e) {
-                    sender.sendMessage("§cJumlah harus angka.");
+                    sender.sendMessage("§cThe count must be a number.");
                 }
                 return true;
             }
             case "multipleweapons": {
                 if (args.length < 3) {
-                    sender.sendMessage("§cGunakan: /carpetplayers pvp multipleweapons <true|false>");
+                    sender.sendMessage("§cUsage: /carpetplayers pvp multipleweapons <true|false>");
                     return true;
                 }
                 boolean enabled = Boolean.parseBoolean(args[2]);
@@ -201,7 +200,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             case "s-tap":
             case "d-tap": {
                 if (args.length < 3) {
-                    sender.sendMessage("§cGunakan: /carpetplayers pvp " + args[1].toLowerCase() + " <true|false>");
+                    sender.sendMessage("§cUsage: /carpetplayers pvp " + args[1].toLowerCase() + " <true|false>");
                     return true;
                 }
                 boolean enabled = Boolean.parseBoolean(args[2]);
@@ -211,14 +210,14 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 return true;
             }
             default:
-                sender.sendMessage("§cSubperintah pvp tidak dikenal: " + args[1]);
+                sender.sendMessage("§cUnknown pvp subcommand: " + args[1]);
                 return true;
         }
     }
 
     private boolean cmdSetBool(CommandSender sender, String[] args, String name) {
         if (args.length < 2) {
-            sender.sendMessage("§cGunakan: /carpetplayers " + name + " <true|false>");
+            sender.sendMessage("§cUsage: /carpetplayers " + name + " <true|false>");
             return true;
         }
         boolean enabled = Boolean.parseBoolean(args[1]);
@@ -260,7 +259,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 return true;
             case "act":
                 if (args.length < 4) {
-                    sender.sendMessage("§cGunakan: /carpetplayers ai act <botname> <instruksi>");
+                    sender.sendMessage("§cUsage: /carpetplayers ai act <botname> <instruction>");
                     return true;
                 }
                 StringBuilder instruction = new StringBuilder();
@@ -274,34 +273,34 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 return true;
             case "chat":
                 if (args.length < 3) {
-                    sender.sendMessage("§cGunakan: /carpetplayers ai chat <true|false>");
+                    sender.sendMessage("§cUsage: /carpetplayers ai chat <true|false>");
                     return true;
                 }
                 AICommands.handleChat(sender, Boolean.parseBoolean(args[2]));
                 return true;
             case "forget":
                 if (args.length < 3) {
-                    sender.sendMessage("§cGunakan: /carpetplayers ai forget <botname>");
+                    sender.sendMessage("§cUsage: /carpetplayers ai forget <botname>");
                     return true;
                 }
                 AICommands.handleForget(sender, args[2]);
                 return true;
             case "defensive":
                 if (args.length < 3) {
-                    sender.sendMessage("§cGunakan: /carpetplayers ai defensive <true|false>");
+                    sender.sendMessage("§cUsage: /carpetplayers ai defensive <true|false>");
                     return true;
                 }
                 AICommands.handleDefensive(sender, Boolean.parseBoolean(args[2]));
                 return true;
             case "provider":
                 if (args.length < 4) {
-                    sender.sendMessage("§cGunakan: /carpetplayers ai provider <openai|gemini|openrouter|groq|local> <apikey>");
+                    sender.sendMessage("§cUsage: /carpetplayers ai provider <openai|gemini|openrouter|groq|local> <apikey>");
                     return true;
                 }
                 AICommands.handleProviderKey(sender, args[2], args[3]);
                 return true;
             default:
-                sender.sendMessage("§cSubperintah ai tidak dikenal: " + args[1]);
+                sender.sendMessage("§cUnknown ai subcommand: " + args[1]);
                 return true;
         }
     }
@@ -311,17 +310,17 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             return true;
         }
         if (args.length < 2) {
-            sender.sendMessage("§cGunakan: /carpetplayers control <nama bot>");
+            sender.sendMessage("§cUsage: /carpetplayers control <bot name>");
             return true;
         }
         FakePlayer bot = findBotByName(args[1]);
         if (bot == null) {
-            sender.sendMessage("§cBot '" + args[1] + "' tidak ditemukan");
+            sender.sendMessage("§cBot '" + args[1] + "' not found");
             return true;
         }
         CONTROLLED.put(((Player) sender).getUniqueId(), bot);
-        sender.sendMessage("§aSekarang kamu mengontrol " + bot.getName()
-                + ". Ketik /carpetplayers release untuk berhenti.");
+        sender.sendMessage("§aYou are now controlling " + bot.getName()
+                + ". Type /carpetplayers release to stop.");
         return true;
     }
 
@@ -331,42 +330,42 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         }
         FakePlayer bot = CONTROLLED.remove(((Player) sender).getUniqueId());
         if (bot == null) {
-            sender.sendMessage("§cKamu tidak mengontrol bot apapun");
+            sender.sendMessage("§cYou are not controlling any bot");
             return true;
         }
         BotBrain brain = BRAINS.get(bot.getUUID());
         if (brain != null) {
             brain.aiStop();
         }
-        sender.sendMessage("§aLepas kontrol " + bot.getName());
+        sender.sendMessage("§aReleased control of " + bot.getName());
         return true;
     }
 
     private boolean cmdRemove(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§cGunakan: /carpetplayers remove <nama bot>");
+            sender.sendMessage("§cUsage: /carpetplayers remove <bot name>");
             return true;
         }
         FakePlayer bot = findBotByName(args[1]);
         if (bot == null) {
-            sender.sendMessage("§cBot '" + args[1] + "' tidak ditemukan");
+            sender.sendMessage("§cBot '" + args[1] + "' not found");
             return true;
         }
         removeBot(bot);
-        sender.sendMessage("§aBot '" + args[1] + "' dihapus");
+        sender.sendMessage("§aBot '" + args[1] + "' removed");
         return true;
     }
 
     private boolean cmdList(CommandSender sender) {
         if (BOTS.isEmpty()) {
-            sender.sendMessage("§fTidak ada bot aktif");
+            sender.sendMessage("§fNo active bots");
             return true;
         }
         List<String> names = new ArrayList<>();
         for (FakePlayer bot : BOTS.values()) {
             names.add(bot.getName().getString());
         }
-        sender.sendMessage("§fBot aktif (" + names.size() + "): " + String.join(", ", names));
+        sender.sendMessage("§fActive bots (" + names.size() + "): " + String.join(", ", names));
         return true;
     }
 
@@ -379,13 +378,13 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         String kitName = args[2].toLowerCase();
         BotBrain brain = MinecraftToolManager.findBotByName(botName);
         if (brain == null) {
-            sender.sendMessage("§c[Kit] Bot tidak ditemukan: " + botName);
+            sender.sendMessage("§c[Kit] Bot not found: " + botName);
             return true;
         }
         boolean ok = KitManager.applyKit(brain, kitName);
         sender.sendMessage(ok
-                ? "§a[Kit] " + kitName + " dipasang ke " + botName
-                : "§c[Kit] Kit tidak dikenal: " + kitName);
+                ? "§a[Kit] " + kitName + " equipped to " + botName
+                : "§c[Kit] Unknown kit: " + kitName);
         return true;
     }
 
@@ -513,7 +512,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         if (!command.startsWith("!")) {
             return;
         }
-        // Perintah untuk bot yang dikontrol player ini: "!<botname> <command>"
+        // Command for the bot controlled by this player: "!<botname> <command>"
         String[] parts = command.substring(1).split("\\s+", 2);
         if (parts.length < 2) {
             return;
@@ -561,7 +560,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 && com.carpetplayers.ai.AIProviderManager.instance().isEnabled()) {
             String botName = bot.getName().getString();
             Bukkit.getScheduler().runTaskAsynchronously(CarpetPlayersPlugin.instance,
-                    () -> AIController.runChat(botName, "Kita diserang, lindungi diri!"));
+                    () -> AIController.runChat(botName, "We are being attacked, defend yourself!"));
         }
     }
 

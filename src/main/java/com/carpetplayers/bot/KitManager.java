@@ -19,8 +19,8 @@ public final class KitManager {
     }
 
     /**
-     * Melengkapi bot dengan kit PvP yang dipilih.
-     * @return true jika kit dikenal dan berhasil dipasang, false jika tidak dikenal.
+     * Equips the bot with the selected PvP kit.
+     * @return true if the kit is known and was equipped successfully, false otherwise.
      */
     public static boolean applyKit(BotBrain bot, String kitName) {
         if (bot == null || kitName == null) {

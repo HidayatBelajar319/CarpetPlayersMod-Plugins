@@ -22,7 +22,7 @@ public final class MinecraftToolManager {
     }
 
     private void registerDefaultTools() {
-        tools.put("get_state", new AITool("get_state", "Ambil informasi state bot saat ini", AITool.noParams(),
+        tools.put("get_state", new AITool("get_state", "Get the bot's current state information", AITool.noParams(),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
@@ -30,11 +30,11 @@ public final class MinecraftToolManager {
                     return bot.aiGetStateInfo();
                 }));
 
-        tools.put("move", new AITool("move", "Gerakkan bot ke arah tertentu selama beberapa tick",
+        tools.put("move", new AITool("move", "Move the bot in a given direction for a number of ticks",
                 AITool.objectParams(
-                        AITool.enumParam("direction", "Arah gerakan: forward, back, left, right", true,
+                        AITool.enumParam("direction", "Movement direction: forward, back, left, right", true,
                                 "forward", "back", "left", "right"),
-                        AITool.intParam("ticks", "Durasi gerakan dalam tick (1-200)", false, 20, 1, 200)),
+                        AITool.intParam("ticks", "Movement duration in ticks (1-200)", false, 20, 1, 200)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
@@ -51,28 +51,28 @@ public final class MinecraftToolManager {
                     } else if ("right".equalsIgnoreCase(direction)) {
                         strafe = 1.0F;
                     } else {
-                        return "Arah tidak valid: " + direction;
+                        return "Invalid direction: " + direction;
                     }
                     int ticks = args.has("ticks") ? args.get("ticks").getAsInt() : 20;
                     bot.aiMove(forward, strafe, ticks);
-                    return "Bot bergerak " + direction + " selama " + ticks + " tick";
+                    return "Bot is moving " + direction + " for " + ticks + " ticks";
                 }));
 
-        tools.put("jump", new AITool("jump", "Buat bot melompat selama beberapa tick",
-                AITool.objectParams(AITool.intParam("ticks", "Jumlah tick melompat (1-100)", false, 10, 1, 100)),
+        tools.put("jump", new AITool("jump", "Make the bot jump for a number of ticks",
+                AITool.objectParams(AITool.intParam("ticks", "Number of jumping ticks (1-100)", false, 10, 1, 100)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
                     }
                     int ticks = args.has("ticks") ? args.get("ticks").getAsInt() : 10;
                     bot.aiJump(ticks);
-                    return "Bot melompat selama " + ticks + " tick";
+                    return "Bot jumped for " + ticks + " ticks";
                 }));
 
-        tools.put("sneak", new AITool("sneak", "Aktifkan atau nonaktifkan sneak bot selama beberapa tick",
+        tools.put("sneak", new AITool("sneak", "Enable or disable bot sneaking for a number of ticks",
                 AITool.objectParams(
-                        AITool.booleanParam("enabled", "True untuk sneak, false untuk berhenti sneak", true),
-                        AITool.intParam("ticks", "Durasi sneak dalam tick (1-200)", false, 40, 1, 200)),
+                        AITool.booleanParam("enabled", "True to sneak, false to stop sneaking", true),
+                        AITool.intParam("ticks", "Sneak duration in ticks (1-200)", false, 40, 1, 200)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
@@ -80,14 +80,14 @@ public final class MinecraftToolManager {
                     boolean enabled = args.has("enabled") && args.get("enabled").getAsBoolean();
                     int ticks = args.has("ticks") ? args.get("ticks").getAsInt() : 40;
                     bot.aiSneak(enabled, ticks);
-                    return "Bot " + (enabled ? "sneak" : "berhenti sneak") + " selama " + ticks + " tick";
+                    return "Bot is " + (enabled ? "sneaking" : "not sneaking") + " for " + ticks + " ticks";
                 }));
 
-        tools.put("look_at", new AITool("look_at", "Arahkan pandangan bot ke koordinat tertentu",
+        tools.put("look_at", new AITool("look_at", "Point the bot's gaze at specific coordinates",
                 AITool.objectParams(
-                        AITool.doubleParam("x", "Koordinat X", true),
-                        AITool.doubleParam("y", "Koordinat Y", true),
-                        AITool.doubleParam("z", "Koordinat Z", true)),
+                        AITool.doubleParam("x", "X coordinate", true),
+                        AITool.doubleParam("y", "Y coordinate", true),
+                        AITool.doubleParam("z", "Z coordinate", true)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
@@ -96,57 +96,57 @@ public final class MinecraftToolManager {
                     double y = args.get("y").getAsDouble();
                     double z = args.get("z").getAsDouble();
                     bot.aiLookAt(x, y, z);
-                    return "Bot melihat ke (" + x + "," + y + "," + z + ")";
+                    return "Bot is looking at (" + x + "," + y + "," + z + ")";
                 }));
 
-        tools.put("attack", new AITool("attack", "Perintahkan bot menyerang pemain bernama target",
-                AITool.objectParams(AITool.stringParam("target", "Nama pemain yang menjadi target serangan", true)),
+        tools.put("attack", new AITool("attack", "Command the bot to attack the player named target",
+                AITool.objectParams(AITool.stringParam("target", "Name of the player to attack", true)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
                     }
                     String target = args.has("target") ? args.get("target").getAsString() : "";
                     if (target.isEmpty()) {
-                        return "Target kosong";
+                        return "Empty target";
                     }
                     bot.aiAttack(target);
                     if (targetExists(target)) {
-                        return "Menyerang " + target;
+                        return "Attacking " + target;
                     }
-                    return "Target " + target + " tidak ditemukan";
+                    return "Target " + target + " not found";
                 }));
 
-        tools.put("eat", new AITool("eat", "Perintahkan bot makan", AITool.noParams(),
+        tools.put("eat", new AITool("eat", "Command the bot to eat", AITool.noParams(),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
                     }
                     bot.aiEat();
-                    return "Bot makan";
+                    return "Bot is eating";
                 }));
 
-        tools.put("chat", new AITool("chat", "Buat bot berkata di chat",
-                AITool.objectParams(AITool.stringParam("message", "Pesan yang diucapkan bot", true)),
+        tools.put("chat", new AITool("chat", "Make the bot speak in chat",
+                AITool.objectParams(AITool.stringParam("message", "Message the bot says", true)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
                     }
                     String message = args.has("message") ? args.get("message").getAsString() : "";
                     bot.aiChat(message);
-                    return "Bot berkata: " + message;
+                    return "Bot said: " + message;
                 }));
 
-        tools.put("stop", new AITool("stop", "Hentikan semua aksi bot", AITool.noParams(),
+        tools.put("stop", new AITool("stop", "Stop all bot actions", AITool.noParams(),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
                     }
                     bot.aiStop();
-                    return "Bot berhenti";
+                    return "Bot stopped";
                 }));
 
-        tools.put("set_state", new AITool("set_state", "Ubah state bot",
-                AITool.objectParams(AITool.enumParam("state", "State baru: follow, wander, pvp, chill, eat", true,
+        tools.put("set_state", new AITool("set_state", "Change the bot's state",
+                AITool.objectParams(AITool.enumParam("state", "New state: follow, wander, pvp, chill, eat", true,
                         "follow", "wander", "pvp", "chill", "eat")),
                 (args, bot) -> {
                     if (bot == null) {
@@ -154,23 +154,23 @@ public final class MinecraftToolManager {
                     }
                     String stateName = args.has("state") ? args.get("state").getAsString() : "";
                     if (stateName.isEmpty()) {
-                        return "State kosong";
+                        return "Empty state";
                     }
                     try {
                         BotBrain.BotState state = BotBrain.BotState.valueOf(stateName.toUpperCase());
                         bot.aiSetState(state);
-                        return "State bot -> " + state.name();
+                        return "Bot state -> " + state.name();
                     } catch (IllegalArgumentException e) {
-                        return "State tidak valid: " + stateName;
+                        return "Invalid state: " + stateName;
                     }
                 }));
 
         tools.put("mine_block", new AITool("mine_block",
-                "Perintahkan bot menambang blok di koordinat tertentu (atau terdekat)",
+                "Command the bot to mine a block at specific coordinates (or the nearest one)",
                 AITool.objectParams(
-                        AITool.doubleParam("x", "Koordinat X", false),
-                        AITool.doubleParam("y", "Koordinat Y", false),
-                        AITool.doubleParam("z", "Koordinat Z", false)),
+                        AITool.doubleParam("x", "X coordinate", false),
+                        AITool.doubleParam("y", "Y coordinate", false),
+                        AITool.doubleParam("z", "Z coordinate", false)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
@@ -180,14 +180,14 @@ public final class MinecraftToolManager {
                         int y = args.get("y").getAsInt();
                         int z = args.get("z").getAsInt();
                         bot.aiMineAt(x, y, z);
-                        return "Bot menambang blok di (" + x + "," + y + "," + z + ")";
+                        return "Bot is mining the block at (" + x + "," + y + "," + z + ")";
                     }
                     bot.aiMineNearest();
-                    return "Bot menambang blok terdekat";
+                    return "Bot is mining the nearest block";
                 }));
 
-        tools.put("use_item", new AITool("use_item", "Gunakan item di tangan bot",
-                AITool.objectParams(AITool.intParam("slot", "Slot item (0-8)", false, -1, -1, 8)),
+        tools.put("use_item", new AITool("use_item", "Use the item in the bot's hand",
+                AITool.objectParams(AITool.intParam("slot", "Item slot (0-8)", false, -1, -1, 8)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
@@ -197,22 +197,22 @@ public final class MinecraftToolManager {
                         bot.aiSelectSlot(slot);
                     }
                     bot.aiUseItem();
-                    return "Bot menggunakan item";
+                    return "Bot is using the item";
                 }));
 
-        tools.put("drop_item", new AITool("drop_item", "Bot membuang item dari tangan",
-                AITool.objectParams(AITool.booleanParam("all", "True untuk membuang semua item", false)),
+        tools.put("drop_item", new AITool("drop_item", "Bot drops the item from its hand",
+                AITool.objectParams(AITool.booleanParam("all", "True to drop all items", false)),
                 (args, bot) -> {
                     if (bot == null) {
                         return noBot();
                     }
                     boolean all = args.has("all") && args.get("all").getAsBoolean();
                     bot.aiDropItem(all);
-                    return all ? "Bot membuang item (semua)" : "Bot membuang item";
+                    return all ? "Bot dropped all items" : "Bot dropped the item";
                 }));
 
-        tools.put("equip_kit", new AITool("equip_kit", "Pasang kit PvP ke bot",
-                AITool.objectParams(AITool.enumParam("kit", "Kit PvP: netherite_crystal, diamond_crystal, netherite_pot, diamond_pot, netherite_basic, diamond_basic", true,
+        tools.put("equip_kit", new AITool("equip_kit", "Equip a PvP kit to the bot",
+                AITool.objectParams(AITool.enumParam("kit", "PvP kit: netherite_crystal, diamond_crystal, netherite_pot, diamond_pot, netherite_basic, diamond_basic", true,
                         "netherite_crystal", "diamond_crystal", "netherite_pot", "diamond_pot", "netherite_basic", "diamond_basic")),
                 (args, bot) -> {
                     if (bot == null) {
@@ -220,7 +220,7 @@ public final class MinecraftToolManager {
                     }
                     String kit = args.has("kit") ? args.get("kit").getAsString() : "";
                     boolean ok = KitManager.applyKit(bot, kit);
-                    return ok ? "Kit " + kit + " dipasang" : "Kit tidak dikenal: " + kit;
+                    return ok ? "Kit " + kit + " equipped" : "Unknown kit: " + kit;
                 }));
     }
 
@@ -238,7 +238,7 @@ public final class MinecraftToolManager {
     }
 
     private static String noBot() {
-        return "Bot tidak ditemukan (mungkin sudah dihapus)";
+        return "Bot not found (it may have been removed)";
     }
 
     public List<AITool> getTools() {
@@ -246,13 +246,13 @@ public final class MinecraftToolManager {
     }
 
     /**
-     * Menjalankan tool berdasarkan nama. Tidak pernah melempar exception;
-     * semua kegagalan dikembalikan sebagai string pesan error.
+     * Executes a tool by name. Never throws an exception;
+     * all failures are returned as error message strings.
      */
     public String executeTool(String toolName, JsonObject args, BotBrain bot) {
         AITool tool = tools.get(toolName);
         if (tool == null) {
-            return "Tool tidak dikenal: " + toolName;
+            return "Unknown tool: " + toolName;
         }
         try {
             if (args == null) {
@@ -260,7 +260,7 @@ public final class MinecraftToolManager {
             }
             return tool.execute(args, bot);
         } catch (Exception e) {
-            return "Error mengeksekusi tool " + toolName + ": "
+            return "Error executing tool " + toolName + ": "
                     + (e.getMessage() != null ? e.getMessage() : e.toString());
         }
     }
