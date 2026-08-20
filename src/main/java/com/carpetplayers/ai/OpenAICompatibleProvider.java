@@ -72,7 +72,14 @@ public class OpenAICompatibleProvider extends AbstractAIProvider {
             String content = message.has("content") && !message.get("content").isJsonNull()
                     ? message.get("content").getAsString() : "";
             List<AIToolCall> toolCalls = parseToolCalls(message);
-            return new AIResponse(content, getName(), model, result.body, toolCalls);
+            AIResponse response = new AIResponse(content, getName(), model, result.body, toolCalls);
+            if (root.has("usage")) {
+                JsonObject usage = root.getAsJsonObject("usage");
+                if (usage.has("prompt_tokens")) response.promptTokens = usage.get("prompt_tokens").getAsInt();
+                if (usage.has("completion_tokens")) response.completionTokens = usage.get("completion_tokens").getAsInt();
+                if (usage.has("total_tokens")) response.totalTokens = usage.get("total_tokens").getAsInt();
+            }
+            return response;
         } catch (AIException e) {
             throw e;
         } catch (Exception e) {

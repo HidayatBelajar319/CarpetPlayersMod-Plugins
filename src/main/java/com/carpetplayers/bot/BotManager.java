@@ -118,6 +118,27 @@ public final class BotManager {
                                         .then(Commands.literal("diamond_basic").executes(ctx -> applyKit(ctx, "diamond_basic")))
                                 )
                         )
+                        .then(Commands.literal("record")
+                                .then(Commands.literal("start")
+                                        .then(Commands.argument("botname", StringArgumentType.word())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(getBotNames(), b))
+                                                .executes(BotManager::recordStart)))
+                                .then(Commands.literal("stop")
+                                        .executes(BotManager::recordStop))
+                                .then(Commands.literal("save")
+                                        .then(Commands.argument("name", StringArgumentType.word())
+                                                .executes(BotManager::recordSave)))
+                                .then(Commands.literal("load")
+                                        .then(Commands.argument("name", StringArgumentType.word())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(BotRecorder.listRecordings(), b))
+                                                .executes(BotManager::recordLoad)))
+                                .then(Commands.literal("play")
+                                        .then(Commands.argument("botname", StringArgumentType.word())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(getBotNames(), b))
+                                                .executes(BotManager::recordPlay)))
+                                .then(Commands.literal("list")
+                                        .executes(BotManager::recordList))
+                        )
                         .then(Commands.literal("rank")
                                 .then(Commands.literal("set")
                                         .then(Commands.argument("player", StringArgumentType.word())
@@ -134,6 +155,18 @@ public final class BotManager {
                                                 .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
                                                         Arrays.asList("admin", "moderator", "user"), b))
                                                 .executes(BotManager::rankDefault)))
+                        )
+                        .then(Commands.literal("reload")
+                                .executes(ctx -> {
+                                    MinecraftServer server = ctx.getSource().getServer();
+                                    com.carpetplayers.config.ModConfig.ensureLoaded();
+                                    com.carpetplayers.ai.AIProviderManager.instance().reload();
+                                    com.carpetplayers.rank.RankManager.init();
+                                    com.carpetplayers.bot.BotPersistence.loadBots(server);
+                                    ctx.getSource().sendSuccess(
+                                            new TextComponent("[CarpetPlayers] Configs reloaded!"), false);
+                                    return 1;
+                                })
                         )
         );
     }
@@ -341,6 +374,74 @@ public final class BotManager {
         return ok ? 1 : 0;
     }
 
+    private static int recordStart(CommandContext<CommandSourceStack> context) {
+        String botName = StringArgumentType.getString(context, "botname");
+        if (BotRecorder.startRecording(botName)) {
+            context.getSource().sendSuccess(
+                    new TextComponent("[Record] Recording started for '" + botName + "'"), true);
+            return 1;
+        }
+        context.getSource().sendFailure(new TextComponent(
+                "[Record] Could not start recording (bot not found or already recording)"));
+        return 0;
+    }
+
+    private static int recordStop(CommandContext<CommandSourceStack> context) {
+        if (BotRecorder.stopRecording()) {
+            context.getSource().sendSuccess(new TextComponent(
+                    "[Record] Recording stopped (" + BotRecorder.getFrameCount() + " frames captured)"), true);
+            return 1;
+        }
+        context.getSource().sendFailure(new TextComponent("[Record] Not currently recording"));
+        return 0;
+    }
+
+    private static int recordSave(CommandContext<CommandSourceStack> context) {
+        String name = StringArgumentType.getString(context, "name");
+        if (BotRecorder.getFrameCount() == 0) {
+            context.getSource().sendFailure(new TextComponent("[Record] No frames to save"));
+            return 0;
+        }
+        BotRecorder.saveRecording(name);
+        context.getSource().sendSuccess(new TextComponent(
+                "[Record] Saved recording '" + name + "' (" + BotRecorder.getFrameCount() + " frames)"), true);
+        return 1;
+    }
+
+    private static int recordLoad(CommandContext<CommandSourceStack> context) {
+        String name = StringArgumentType.getString(context, "name");
+        if (BotRecorder.loadRecording(name)) {
+            context.getSource().sendSuccess(new TextComponent(
+                    "[Record] Loaded recording '" + name + "' (" + BotRecorder.getFrameCount() + " frames)"), true);
+            return 1;
+        }
+        context.getSource().sendFailure(new TextComponent("[Record] Recording '" + name + "' not found"));
+        return 0;
+    }
+
+    private static int recordPlay(CommandContext<CommandSourceStack> context) {
+        String botName = StringArgumentType.getString(context, "botname");
+        if (BotRecorder.startPlayback(botName)) {
+            context.getSource().sendSuccess(new TextComponent(
+                    "[Record] Playing recording on '" + botName + "'"), true);
+            return 1;
+        }
+        context.getSource().sendFailure(new TextComponent(
+                "[Record] Could not start playback (no recording loaded, already playing, or bot not found)"));
+        return 0;
+    }
+
+    private static int recordList(CommandContext<CommandSourceStack> context) {
+        List<String> recordings = BotRecorder.listRecordings();
+        if (recordings.isEmpty()) {
+            context.getSource().sendSuccess(new TextComponent("[Record] No saved recordings"), false);
+            return 0;
+        }
+        context.getSource().sendSuccess(new TextComponent(
+                "[Record] Saved recordings: " + String.join(", ", recordings)), false);
+        return recordings.size();
+    }
+
     public static void removeBot(EntityPlayerMPFake bot) {
         BRAINS.remove(bot.getUUID());
         BOTS.remove(bot.getUUID());
@@ -352,6 +453,10 @@ public final class BotManager {
     }
 
     public static void tick(MinecraftServer server) {
+        // Recording & Playback ticks
+        BotRecorder.recordTick();
+        BotRecorder.playbackTick();
+
         autoSaveCounter++;
         if (ModConfig.instance.persistentBots && autoSaveCounter >= ModConfig.instance.autoSaveIntervalMinutes * 20L * 60L) {
             autoSaveCounter = 0;
@@ -410,6 +515,16 @@ public final class BotManager {
         for (EntityPlayerMPFake bot : BOTS.values()) {
             if (bot.getName().getString().equalsIgnoreCase(name)) {
                 return bot;
+            }
+        }
+        return null;
+    }
+
+    public static BotBrain findBrainByName(String name) {
+        for (BotBrain brain : BRAINS.values()) {
+            if (brain.getBotName().equalsIgnoreCase(name)
+                    || brain.getBot().getName().getString().equalsIgnoreCase(name)) {
+                return brain;
             }
         }
         return null;

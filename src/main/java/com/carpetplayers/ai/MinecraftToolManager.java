@@ -434,6 +434,20 @@ public final class MinecraftToolManager {
                     }
                     return "Pasted " + clipboard.size() + " blocks at (" + tx + "," + ty + "," + tz + ")";
                 }));
+
+        tools.put("navigate_to", new AITool("navigate_to", "Navigate the bot to a specific position using A* pathfinding",
+                AITool.objectParams(
+                        AITool.intParam("x", "Target X coordinate", true, 0, -30000000, 30000000),
+                        AITool.intParam("y", "Target Y coordinate", true, 0, 0, 255),
+                        AITool.intParam("z", "Target Z coordinate", true, 0, -30000000, 30000000)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    int x = args.get("x").getAsInt();
+                    int y = args.get("y").getAsInt();
+                    int z = args.get("z").getAsInt();
+                    bot.navigateTo(new net.minecraft.core.BlockPos(x, y, z));
+                    return "Navigating to (" + x + ", " + y + ", " + z + ")";
+                }));
     }
 
     /**

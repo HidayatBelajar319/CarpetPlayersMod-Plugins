@@ -74,7 +74,14 @@ public class GeminiProvider extends AbstractAIProvider {
                     text.append(partObj.get("text").getAsString());
                 }
             }
-            return new AIResponse(text.toString(), getName(), model, result.body);
+            AIResponse response = new AIResponse(text.toString(), getName(), model, result.body);
+            if (root.has("usageMetadata")) {
+                JsonObject meta = root.getAsJsonObject("usageMetadata");
+                if (meta.has("promptTokenCount")) response.promptTokens = meta.get("promptTokenCount").getAsInt();
+                if (meta.has("candidatesTokenCount")) response.completionTokens = meta.get("candidatesTokenCount").getAsInt();
+                if (meta.has("totalTokenCount")) response.totalTokens = meta.get("totalTokenCount").getAsInt();
+            }
+            return response;
         } catch (AIException e) {
             throw e;
         } catch (Exception e) {
@@ -122,7 +129,14 @@ public class GeminiProvider extends AbstractAIProvider {
                     index++;
                 }
             }
-            return new AIResponse(text.toString(), getName(), model, result.body, toolCalls);
+            AIResponse response = new AIResponse(text.toString(), getName(), model, result.body, toolCalls);
+            if (root.has("usageMetadata")) {
+                JsonObject meta = root.getAsJsonObject("usageMetadata");
+                if (meta.has("promptTokenCount")) response.promptTokens = meta.get("promptTokenCount").getAsInt();
+                if (meta.has("candidatesTokenCount")) response.completionTokens = meta.get("candidatesTokenCount").getAsInt();
+                if (meta.has("totalTokenCount")) response.totalTokens = meta.get("totalTokenCount").getAsInt();
+            }
+            return response;
         } catch (AIException e) {
             throw e;
         } catch (Exception e) {

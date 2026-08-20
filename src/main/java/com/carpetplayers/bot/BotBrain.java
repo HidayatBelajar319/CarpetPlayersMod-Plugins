@@ -71,6 +71,12 @@ public class BotBrain {
     protected float aiLastForward;
     protected float aiLastStrafe;
 
+    // A* pathfinding
+    protected List<BlockPos> currentPath;
+    protected int pathIndex;
+    protected BlockPos pathTarget;
+    protected int pathRecalcCooldown;
+
     public String pendingReply;
 
     private Vec3 controllerLastPos;
@@ -355,6 +361,8 @@ public class BotBrain {
         if (!bot.isAlive()) {
             return;
         }
+        // Follow A* path if active
+        if (tickPathfinding()) return;
         if (ModConfig.instance.useItemEnabled) {
             tryEat();
             usePotionIfLow();
@@ -983,5 +991,72 @@ public class BotBrain {
             this.isSolid = isSolid;
             this.isLavaFire = isLavaFire;
         }
+    }
+
+    /**
+     * Start navigating to a target position using A* pathfinding.
+     */
+    public void navigateTo(BlockPos target) {
+        this.pathTarget = target;
+        this.pathRecalcCooldown = 0;
+        recalculatePath();
+    }
+
+    private void recalculatePath() {
+        if (pathTarget == null) return;
+        BlockPos start = new BlockPos(
+            (int) Math.floor(bot.getX()),
+            (int) Math.floor(bot.getY()),
+            (int) Math.floor(bot.getZ())
+        );
+        this.currentPath = AStarPathfinder.findPath(bot.getLevel(), start, pathTarget);
+        this.pathIndex = 0;
+    }
+
+    /**
+     * Follow the current A* path. Call this from tick(). Returns true if following a path.
+     */
+    protected boolean tickPathfinding() {
+        if (currentPath == null || currentPath.isEmpty() || pathTarget == null) return false;
+
+        if (pathRecalcCooldown > 0) pathRecalcCooldown--;
+
+        // Check if we reached the target
+        BlockPos botPos = new BlockPos(
+            (int) Math.floor(bot.getX()),
+            (int) Math.floor(bot.getY()),
+            (int) Math.floor(bot.getZ())
+        );
+        if (botPos.distSqr(pathTarget) <= 2) {
+            currentPath = null;
+            pathTarget = null;
+            return false;
+        }
+
+        // Follow path
+        if (pathIndex >= currentPath.size()) {
+            if (pathRecalcCooldown <= 0) {
+                recalculatePath();
+                pathRecalcCooldown = 20; // recalc every second
+            }
+            return currentPath != null;
+        }
+
+        BlockPos next = currentPath.get(pathIndex);
+        double dx = next.getX() + 0.5 - bot.getX();
+        double dy = next.getY() + 0.5 - bot.getY();
+        double dz = next.getZ() + 0.5 - bot.getZ();
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (dist < 0.5) {
+            pathIndex++;
+            return true;
+        }
+
+        // Move toward next waypoint
+        double speed = 0.2;
+        bot.setDeltaMovement(dx / dist * speed, dy / dist * speed + 0.1, dz / dist * speed);
+        bot.setOnGround(true);
+        return true;
     }
 }

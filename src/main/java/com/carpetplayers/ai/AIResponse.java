@@ -9,6 +9,10 @@ public class AIResponse {
     public final String raw;
     public final List<AIToolCall> toolCalls;
 
+    public int promptTokens;
+    public int completionTokens;
+    public int totalTokens;
+
     public AIResponse(String content, String providerName, String model, String raw) {
         this(content, providerName, model, raw, null);
     }

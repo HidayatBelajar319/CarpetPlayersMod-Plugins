@@ -1,6 +1,7 @@
 package com.carpetplayers.ai;
 
 import com.carpetplayers.bot.BotBrain;
+import com.carpetplayers.config.ModConfig;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
@@ -90,8 +91,16 @@ public final class AIController {
 
         String lastContent = "";
         String finalReply = "";
+        int accumulatedTokens = 0;
         try {
             for (int i = 0; i < MAX_ITERATIONS; i++) {
+                if (ModConfig.instance.creditTrackingEnabled
+                        && accumulatedTokens > ModConfig.instance.maxCreditsPerAction * 1000) {
+                    String soFar = finalReply.isEmpty() ? lastContent : finalReply;
+                    finalReply = soFar.isEmpty() ? "Finished (credit budget exceeded)"
+                            : soFar + " (credit budget exceeded)";
+                    break;
+                }
                 while (messages.size() > MAX_MESSAGES) {
                     messages.remove(1);
                 }
@@ -100,6 +109,9 @@ public final class AIController {
                 if (response == null) {
                     deliverResult(server, onError, "Empty AI response");
                     return;
+                }
+                if (response.totalTokens > 0) {
+                    accumulatedTokens += response.totalTokens;
                 }
                 lastContent = response.content != null ? response.content : "";
                 if (response.toolCalls == null || response.toolCalls.isEmpty()) {
@@ -152,8 +164,15 @@ public final class AIController {
         messages.add(AIMessage.user(instruction));
 
         String reply = "";
+        int accumulatedTokens = 0;
         try {
             for (int i = 0; i < MAX_ITERATIONS; i++) {
+                if (ModConfig.instance.creditTrackingEnabled
+                        && accumulatedTokens > ModConfig.instance.maxCreditsPerAction * 1000) {
+                    reply = reply.isEmpty() ? "(credit budget exceeded)"
+                            : reply + " (credit budget exceeded)";
+                    break;
+                }
                 while (messages.size() > MAX_MESSAGES) {
                     messages.remove(1);
                 }
@@ -162,6 +181,9 @@ public final class AIController {
                 if (response == null) {
                     deliverResult(server, r -> broadcastChatReply(botName, "Empty AI response"), null);
                     return;
+                }
+                if (response.totalTokens > 0) {
+                    accumulatedTokens += response.totalTokens;
                 }
                 reply = response.content != null ? response.content : "";
                 if (response.toolCalls == null || response.toolCalls.isEmpty()) {

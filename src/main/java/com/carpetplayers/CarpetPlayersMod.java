@@ -40,6 +40,16 @@ public class CarpetPlayersMod implements ModInitializer {
             }
             BotManager.tick(server);
         });
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((server, manager, success) -> {
+            if (success) {
+                LOGGER.info("CarpetPlayers: Re-syncing configs after reload...");
+                ModConfig.ensureLoaded();
+                AIProviderManager.instance().reload();
+                com.carpetplayers.rank.RankManager.init();
+                BotPersistence.loadBots(server);
+                LOGGER.info("CarpetPlayers: Config re-sync complete.");
+            }
+        });
         com.carpetplayers.network.ServerNetworking.init();
 
         // Register shutdown hook to clean up AI executor and save bot configs

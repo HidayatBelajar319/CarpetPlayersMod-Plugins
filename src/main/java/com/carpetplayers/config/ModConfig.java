@@ -30,6 +30,8 @@ public class ModConfig {
     public int userMaxBots = 0;                 // override for user max bots (0 = cannot spawn)
     public boolean persistentBots = false;     // save bot configs across restarts
     public int autoSaveIntervalMinutes = 5;    // auto-save interval in minutes
+    public int maxCreditsPerAction = 5;    // max credits (thousands of tokens) per AI action
+    public boolean creditTrackingEnabled = true;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static ModConfig instance = new ModConfig();

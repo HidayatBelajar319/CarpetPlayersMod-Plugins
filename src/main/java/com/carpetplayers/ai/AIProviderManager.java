@@ -27,6 +27,7 @@ public final class AIProviderManager {
     });
     private File configFile;
     private AIConfig config = new AIConfig();
+    private int lastTotalTokens = 0;
 
     private AIProviderManager() {
     }
@@ -290,6 +291,8 @@ public final class AIProviderManager {
         return health;
     }
 
+    public int getLastTotalTokens() { return lastTotalTokens; }
+
     public AIProvider getActiveProvider() {
         for (AIProvider provider : providers) {
             if (provider.isEnabled() && !provider.onCooldown() && !provider.getModels().isEmpty()) {
@@ -336,6 +339,7 @@ public final class AIProviderManager {
                             ? provider.sendMessageWithTools(messages, tools, model)
                             : provider.sendMessage(messages, model);
                     provider.markSuccess();
+                    lastTotalTokens = response.totalTokens;
                     return response;
                 } catch (AIException e) {
                     provider.markFailure(e);
