@@ -13,10 +13,14 @@
   "entrypoints": {
     "main": [
       "com.carpetplayers.CarpetPlayersMod"
+    ],
+    "client": [
+      "com.carpetplayers.client.CarpetPlayersClient"
     ]
   },
   "mixins": [
-    "carpetplayers.mixins.json"
+    "carpetplayers.mixins.json",
+    "carpetplayers.client.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.7.1",

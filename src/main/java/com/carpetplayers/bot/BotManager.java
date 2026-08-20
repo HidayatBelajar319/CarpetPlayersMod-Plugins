@@ -87,6 +87,8 @@ public final class BotManager {
                                         .then(providerBranch("groq"))
                                         .then(providerBranch("local")))
                         )
+                        .then(Commands.literal("menu")
+                                .executes(BotManager::openMenu))
                         .then(Commands.literal("control")
                                 .then(Commands.argument("name", StringArgumentType.word())
                                         .suggests((context, builder) ->
@@ -377,5 +379,15 @@ public final class BotManager {
      */
     public static boolean isDedicated(MinecraftServer server) {
         return server != null && !server.isSingleplayer();
+    }
+
+    private static int openMenu(CommandContext<CommandSourceStack> context) {
+        try {
+            ServerPlayer player = context.getSource().getPlayerOrException();
+            com.carpetplayers.network.ServerNetworking.openMenuFor(player);
+            return 1;
+        } catch (CommandSyntaxException e) {
+            return 0;
+        }
     }
 }

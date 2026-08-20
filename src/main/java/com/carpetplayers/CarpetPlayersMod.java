@@ -28,6 +28,7 @@ public class CarpetPlayersMod implements ModInitializer {
         // Register commands and tick handler
         CommandRegistrationCallback.EVENT.register(BotManager::registerCommands);
         ServerTickEvents.END_SERVER_TICK.register(BotManager::tick);
+        com.carpetplayers.network.ServerNetworking.init();
 
         // Register shutdown hook to clean up AI executor
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
