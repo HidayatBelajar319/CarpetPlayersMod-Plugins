@@ -17,6 +17,9 @@ public final class MinecraftToolManager {
 
     private final Map<String, AITool> tools = new LinkedHashMap<>();
 
+    private static java.util.List<net.minecraft.server.v1_16_R3.IBlockData> clipboard = null;
+    private static int[] clipboardSize = null;
+
     private MinecraftToolManager() {
         registerDefaultTools();
     }
@@ -222,6 +225,210 @@ public final class MinecraftToolManager {
                     boolean ok = KitManager.applyKit(bot, kit);
                     return ok ? "Kit " + kit + " dipasang" : "Kit tidak dikenal: " + kit;
                 }));
+
+        tools.put("run_command", new AITool("run_command",
+                "Jalankan perintah server sebagai bot.",
+                AITool.objectParams(
+                        AITool.stringParam("command", "Perintah server yang akan dijalankan (dengan prefix /)", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    String command = args.has("command") ? args.get("command").getAsString() : "";
+                    if (command.isEmpty()) return "Perintah kosong";
+                    return bot.aiRunCommand(command);
+                }));
+
+        tools.put("set_blocks", new AITool("set_blocks",
+                "Set semua blok di area persegi panjang menjadi tipe blok tertentu. Seperti perintah WorldEdit //set.",
+                AITool.objectParams(
+                        AITool.intParam("x1", "Koordinat X awal", true, 0, -30000000, 30000000),
+                        AITool.intParam("y1", "Koordinat Y awal", true, 0, 0, 255),
+                        AITool.intParam("z1", "Koordinat Z awal", true, 0, -30000000, 30000000),
+                        AITool.intParam("x2", "Koordinat X akhir", true, 0, -30000000, 30000000),
+                        AITool.intParam("y2", "Koordinat Y akhir", true, 0, 0, 255),
+                        AITool.intParam("z2", "Koordinat Z akhir", true, 0, -30000000, 30000000),
+                        AITool.stringParam("block", "Tipe blok (mis. 'minecraft:stone', 'minecraft:dirt')", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    net.minecraft.server.v1_16_R3.IBlockData state;
+                    try {
+                        state = blockStateFromString(args.get("block").getAsString());
+                    } catch (IllegalArgumentException e) {
+                        return "Blok tidak valid: " + args.get("block").getAsString();
+                    }
+                    int x1 = args.get("x1").getAsInt(), y1 = args.get("y1").getAsInt(), z1 = args.get("z1").getAsInt();
+                    int x2 = args.get("x2").getAsInt(), y2 = args.get("y2").getAsInt(), z2 = args.get("z2").getAsInt();
+                    int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                    int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+                    int minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+                    net.minecraft.server.v1_16_R3.World level = bot.getBot().getWorld();
+                    int count = 0;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                level.setTypeUpdate(new net.minecraft.server.v1_16_R3.BlockPosition(x, y, z), state);
+                                count++;
+                            }
+                        }
+                    }
+                    return "Set " + count + " blok menjadi " + args.get("block").getAsString();
+                }));
+
+        tools.put("replace_blocks", new AITool("replace_blocks",
+                "Ganti semua blok dari satu tipe ke tipe lain di area persegi panjang. Seperti WorldEdit //replace.",
+                AITool.objectParams(
+                        AITool.intParam("x1", "Koordinat X awal", true, 0, -30000000, 30000000),
+                        AITool.intParam("y1", "Koordinat Y awal", true, 0, 0, 255),
+                        AITool.intParam("z1", "Koordinat Z awal", true, 0, -30000000, 30000000),
+                        AITool.intParam("x2", "Koordinat X akhir", true, 0, -30000000, 30000000),
+                        AITool.intParam("y2", "Koordinat Y akhir", true, 0, 0, 255),
+                        AITool.intParam("z2", "Koordinat Z akhir", true, 0, -30000000, 30000000),
+                        AITool.stringParam("from", "Tipe blok sumber yang diganti (mis. 'minecraft:stone')", true),
+                        AITool.stringParam("to", "Tipe blok target (mis. 'minecraft:dirt')", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    net.minecraft.server.v1_16_R3.IBlockData fromState;
+                    net.minecraft.server.v1_16_R3.IBlockData toState;
+                    try {
+                        fromState = blockStateFromString(args.get("from").getAsString());
+                        toState = blockStateFromString(args.get("to").getAsString());
+                    } catch (IllegalArgumentException e) {
+                        return "Tipe blok tidak valid: " + e.getMessage();
+                    }
+                    int x1 = args.get("x1").getAsInt(), y1 = args.get("y1").getAsInt(), z1 = args.get("z1").getAsInt();
+                    int x2 = args.get("x2").getAsInt(), y2 = args.get("y2").getAsInt(), z2 = args.get("z2").getAsInt();
+                    int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                    int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+                    int minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+                    net.minecraft.server.v1_16_R3.World level = bot.getBot().getWorld();
+                    int count = 0;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                net.minecraft.server.v1_16_R3.BlockPosition pos = new net.minecraft.server.v1_16_R3.BlockPosition(x, y, z);
+                                if (level.getType(pos).equals(fromState)) {
+                                    level.setTypeUpdate(pos, toState);
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    return "Mengganti " + count + " " + args.get("from").getAsString() + " dengan " + args.get("to").getAsString();
+                }));
+
+        tools.put("read_file", new AITool("read_file",
+                "Baca isi file dari direktori root server. Berguna untuk menganalisis kode. Hanya membaca file .java, .json, dan .yml.",
+                AITool.objectParams(
+                        AITool.stringParam("path", "Path file relatif dari root server (mis. 'plugins/MyPlugin/src/main/java/com/carpetplayers/bot/BotBrain.java')", true)),
+                (args, bot) -> {
+                    String path = args.has("path") ? args.get("path").getAsString() : "";
+                    if (path.isEmpty()) return "Path kosong";
+                    if (!path.endsWith(".java") && !path.endsWith(".json") && !path.endsWith(".yml")) {
+                        return "Hanya file .java, .json, dan .yml yang diizinkan demi keamanan";
+                    }
+                    try {
+                        java.nio.file.Path basePath = org.bukkit.Bukkit.getServer().getWorldContainer().toPath();
+                        java.nio.file.Path filePath = basePath.resolve(path).normalize();
+                        if (!filePath.startsWith(basePath)) {
+                            return "Path traversal tidak diizinkan";
+                        }
+                        if (!java.nio.file.Files.exists(filePath)) {
+                            return "File tidak ditemukan: " + path;
+                        }
+                        if (java.nio.file.Files.size(filePath) > 64 * 1024) {
+                            return "File terlalu besar (>64KB). Batas: 64KB";
+                        }
+                        String content = new String(java.nio.file.Files.readAllBytes(filePath));
+                        if (content.length() > 4000) {
+                            content = content.substring(0, 4000) + "\n... (dipotong pada 4000 karakter)";
+                        }
+                        return "File: " + path + "\n---\n" + content;
+                    } catch (Exception e) {
+                        return "Error membaca file: " + e.getMessage();
+                    }
+                }));
+
+        tools.put("group_command", new AITool("group_command",
+                "Jalankan perintah server untuk beberapa bot sekaligus. Berikan nama bot sebagai daftar dipisah koma.",
+                AITool.objectParams(
+                        AITool.stringParam("bots", "Nama bot dipisah koma (mis. 'FriendBot_1,FriendBot_2')", true),
+                        AITool.stringParam("command", "Perintah server untuk dijalankan untuk setiap bot (mis. '/effect give @s speed 30')", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    String botNames = args.has("bots") ? args.get("bots").getAsString() : "";
+                    String command = args.has("command") ? args.get("command").getAsString() : "";
+                    if (botNames.isEmpty() || command.isEmpty()) return "'bots' dan 'command' wajib diisi";
+                    String[] names = botNames.split(",");
+                    int success = 0, failed = 0;
+                    for (String name : names) {
+                        String trimmed = name.trim();
+                        BotBrain target = findBotByName(trimmed);
+                        if (target == null) {
+                            failed++;
+                            continue;
+                        }
+                        String result = target.aiRunCommand(command);
+                        if (result.startsWith("Command executed")) {
+                            success++;
+                        } else {
+                            failed++;
+                        }
+                    }
+                    return "Perintah grup: " + success + " berhasil, " + failed + " gagal dari " + names.length;
+                }));
+
+        tools.put("copy_region", new AITool("copy_region",
+                "Salin semua blok di area persegi panjang ke clipboard memori. Gunakan paste_region untuk menempel.",
+                AITool.objectParams(
+                        AITool.intParam("x1", "Koordinat X awal", true, 0, -30000000, 30000000),
+                        AITool.intParam("y1", "Koordinat Y awal", true, 0, 0, 255),
+                        AITool.intParam("z1", "Koordinat Z awal", true, 0, -30000000, 30000000),
+                        AITool.intParam("x2", "Koordinat X akhir", true, 0, -30000000, 30000000),
+                        AITool.intParam("y2", "Koordinat Y akhir", true, 0, 0, 255),
+                        AITool.intParam("z2", "Koordinat Z akhir", true, 0, -30000000, 30000000)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    int x1 = args.get("x1").getAsInt(), y1 = args.get("y1").getAsInt(), z1 = args.get("z1").getAsInt();
+                    int x2 = args.get("x2").getAsInt(), y2 = args.get("y2").getAsInt(), z2 = args.get("z2").getAsInt();
+                    int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                    int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+                    int minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+                    net.minecraft.server.v1_16_R3.World level = bot.getBot().getWorld();
+                    java.util.List<net.minecraft.server.v1_16_R3.IBlockData> blocks = new java.util.ArrayList<>();
+                    int w = maxX - minX + 1, h = maxY - minY + 1, d = maxZ - minZ + 1;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                blocks.add(level.getType(new net.minecraft.server.v1_16_R3.BlockPosition(x, y, z)));
+                            }
+                        }
+                    }
+                    clipboard = blocks;
+                    clipboardSize = new int[]{w, h, d};
+                    return "Menyalin " + blocks.size() + " blok (" + w + "x" + h + "x" + d + ") ke clipboard";
+                }));
+
+        tools.put("paste_region", new AITool("paste_region",
+                "Tempel area yang sebelumnya disalin ke lokasi target.",
+                AITool.objectParams(
+                        AITool.intParam("x", "Koordinat X target", true, 0, -30000000, 30000000),
+                        AITool.intParam("y", "Koordinat Y target", true, 0, 0, 255),
+                        AITool.intParam("z", "Koordinat Z target", true, 0, -30000000, 30000000)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    if (clipboard == null || clipboard.isEmpty()) return "Tidak ada area di clipboard. Gunakan copy_region dulu.";
+                    int tx = args.get("x").getAsInt(), ty = args.get("y").getAsInt(), tz = args.get("z").getAsInt();
+                    net.minecraft.server.v1_16_R3.World level = bot.getBot().getWorld();
+                    int idx = 0;
+                    for (int x = 0; x < clipboardSize[0]; x++) {
+                        for (int y = 0; y < clipboardSize[1]; y++) {
+                            for (int z = 0; z < clipboardSize[2]; z++) {
+                                level.setTypeUpdate(new net.minecraft.server.v1_16_R3.BlockPosition(tx + x, ty + y, tz + z), clipboard.get(idx));
+                                idx++;
+                            }
+                        }
+                    }
+                    return "Menempel " + clipboard.size() + " blok di (" + tx + "," + ty + "," + tz + ")";
+                }));
     }
 
     private static boolean targetExists(String name) {
@@ -276,5 +483,22 @@ public final class MinecraftToolManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Menyelesaikan nama blok (mis. "minecraft:stone") menjadi IBlockData default.
+     * Melempar IllegalArgumentException untuk nama yang tidak dikenal atau salah format.
+     */
+    private static net.minecraft.server.v1_16_R3.IBlockData blockStateFromString(String name) {
+        if (name == null || name.isEmpty()) throw new IllegalArgumentException("empty block name");
+        net.minecraft.server.v1_16_R3.MinecraftKey id;
+        try {
+            id = net.minecraft.server.v1_16_R3.MinecraftKey.a(name);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("invalid block name: " + name);
+        }
+        net.minecraft.server.v1_16_R3.Block block = net.minecraft.server.v1_16_R3.IRegistry.BLOCK.getOptional(id)
+                .orElseThrow(() -> new IllegalArgumentException("unknown block: " + name));
+        return block.getBlockData();
     }
 }

@@ -339,6 +339,10 @@ public class BotBrain {
         this.ownerUuid = ownerUuid;
     }
 
+    public UUID getOwnerUuid() {
+        return ownerUuid;
+    }
+
     protected EntityPlayerActionPack actions() {
         return ((ServerPlayerEntityInterface) bot).getActionPack();
     }

@@ -17,6 +17,9 @@ public final class MinecraftToolManager {
 
     private final Map<String, AITool> tools = new LinkedHashMap<>();
 
+    private static java.util.List<net.minecraft.world.level.block.state.BlockState> clipboard = null;
+    private static int[] clipboardSize = null;
+
     private MinecraftToolManager() {
         registerDefaultTools();
     }
@@ -222,6 +225,210 @@ public final class MinecraftToolManager {
                     boolean ok = KitManager.applyKit(bot, kit);
                     return ok ? "Kit " + kit + " equipped" : "Unknown kit: " + kit;
                 }));
+
+        tools.put("run_command", new AITool("run_command",
+                "Execute a server command as the bot.",
+                AITool.objectParams(
+                        AITool.stringParam("command", "The server command to execute (include the / prefix)", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    String command = args.has("command") ? args.get("command").getAsString() : "";
+                    if (command.isEmpty()) return "Empty command";
+                    return bot.aiRunCommand(command);
+                }));
+
+        tools.put("set_blocks", new AITool("set_blocks",
+                "Set all blocks in a rectangular region to a specified block type. Like WorldEdit //set command.",
+                AITool.objectParams(
+                        AITool.intParam("x1", "Start X coordinate", true, 0, -30000000, 30000000),
+                        AITool.intParam("y1", "Start Y coordinate", true, 0, 0, 255),
+                        AITool.intParam("z1", "Start Z coordinate", true, 0, -30000000, 30000000),
+                        AITool.intParam("x2", "End X coordinate", true, 0, -30000000, 30000000),
+                        AITool.intParam("y2", "End Y coordinate", true, 0, 0, 255),
+                        AITool.intParam("z2", "End Z coordinate", true, 0, -30000000, 30000000),
+                        AITool.stringParam("block", "Block type (e.g. 'minecraft:stone', 'minecraft:dirt')", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    net.minecraft.world.level.block.state.BlockState state;
+                    try {
+                        state = blockStateFromString(args.get("block").getAsString());
+                    } catch (IllegalArgumentException e) {
+                        return "Invalid block: " + args.get("block").getAsString();
+                    }
+                    int x1 = args.get("x1").getAsInt(), y1 = args.get("y1").getAsInt(), z1 = args.get("z1").getAsInt();
+                    int x2 = args.get("x2").getAsInt(), y2 = args.get("y2").getAsInt(), z2 = args.get("z2").getAsInt();
+                    int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                    int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+                    int minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+                    net.minecraft.world.level.Level level = bot.getBot().level();
+                    int count = 0;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                level.setBlockAndUpdate(new net.minecraft.core.BlockPos(x, y, z), state);
+                                count++;
+                            }
+                        }
+                    }
+                    return "Set " + count + " blocks to " + args.get("block").getAsString();
+                }));
+
+        tools.put("replace_blocks", new AITool("replace_blocks",
+                "Replace all blocks of one type with another in a rectangular region. Like WorldEdit //replace.",
+                AITool.objectParams(
+                        AITool.intParam("x1", "Start X", true, 0, -30000000, 30000000),
+                        AITool.intParam("y1", "Start Y", true, 0, 0, 255),
+                        AITool.intParam("z1", "Start Z", true, 0, -30000000, 30000000),
+                        AITool.intParam("x2", "End X", true, 0, -30000000, 30000000),
+                        AITool.intParam("y2", "End Y", true, 0, 0, 255),
+                        AITool.intParam("z2", "End Z", true, 0, -30000000, 30000000),
+                        AITool.stringParam("from", "Source block type to replace (e.g. 'minecraft:stone')", true),
+                        AITool.stringParam("to", "Target block type (e.g. 'minecraft:dirt')", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    net.minecraft.world.level.block.state.BlockState fromState;
+                    net.minecraft.world.level.block.state.BlockState toState;
+                    try {
+                        fromState = blockStateFromString(args.get("from").getAsString());
+                        toState = blockStateFromString(args.get("to").getAsString());
+                    } catch (IllegalArgumentException e) {
+                        return "Invalid block type: " + e.getMessage();
+                    }
+                    int x1 = args.get("x1").getAsInt(), y1 = args.get("y1").getAsInt(), z1 = args.get("z1").getAsInt();
+                    int x2 = args.get("x2").getAsInt(), y2 = args.get("y2").getAsInt(), z2 = args.get("z2").getAsInt();
+                    int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                    int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+                    int minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+                    net.minecraft.world.level.Level level = bot.getBot().level();
+                    int count = 0;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, y, z);
+                                if (level.getBlockState(pos).equals(fromState)) {
+                                    level.setBlockAndUpdate(pos, toState);
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                    return "Replaced " + count + " " + args.get("from").getAsString() + " with " + args.get("to").getAsString();
+                }));
+
+        tools.put("read_file", new AITool("read_file",
+                "Read the contents of a file from the server's root directory. Useful for analyzing code. Only reads .java and .json files.",
+                AITool.objectParams(
+                        AITool.stringParam("path", "Relative file path from the server root (e.g. 'plugins/MyPlugin/src/main/java/com/carpetplayers/bot/BotBrain.java')", true)),
+                (args, bot) -> {
+                    String path = args.has("path") ? args.get("path").getAsString() : "";
+                    if (path.isEmpty()) return "Empty path";
+                    if (!path.endsWith(".java") && !path.endsWith(".json") && !path.endsWith(".yml")) {
+                        return "Only .java, .json, and .yml files are allowed for security";
+                    }
+                    try {
+                        java.nio.file.Path basePath = org.bukkit.Bukkit.getServer().getPluginsFolder().getParentFile().toPath();
+                        java.nio.file.Path filePath = basePath.resolve(path).normalize();
+                        if (!filePath.startsWith(basePath)) {
+                            return "Path traversal not allowed";
+                        }
+                        if (!java.nio.file.Files.exists(filePath)) {
+                            return "File not found: " + path;
+                        }
+                        if (java.nio.file.Files.size(filePath) > 64 * 1024) {
+                            return "File too large (>64KB). Limit: 64KB";
+                        }
+                        String content = new String(java.nio.file.Files.readAllBytes(filePath));
+                        if (content.length() > 4000) {
+                            content = content.substring(0, 4000) + "\n... (truncated at 4000 chars)";
+                        }
+                        return "File: " + path + "\n---\n" + content;
+                    } catch (Exception e) {
+                        return "Error reading file: " + e.getMessage();
+                    }
+                }));
+
+        tools.put("group_command", new AITool("group_command",
+                "Execute a server command for multiple bots at once. Provide bot names as comma-separated list.",
+                AITool.objectParams(
+                        AITool.stringParam("bots", "Comma-separated bot names (e.g. 'FriendBot_1,FriendBot_2')", true),
+                        AITool.stringParam("command", "Server command to execute for each bot (e.g. '/effect give @s speed 30')", true)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    String botNames = args.has("bots") ? args.get("bots").getAsString() : "";
+                    String command = args.has("command") ? args.get("command").getAsString() : "";
+                    if (botNames.isEmpty() || command.isEmpty()) return "Both 'bots' and 'command' are required";
+                    String[] names = botNames.split(",");
+                    int success = 0, failed = 0;
+                    for (String name : names) {
+                        String trimmed = name.trim();
+                        BotBrain target = findBotByName(trimmed);
+                        if (target == null) {
+                            failed++;
+                            continue;
+                        }
+                        String result = target.aiRunCommand(command);
+                        if (result.startsWith("Command executed")) {
+                            success++;
+                        } else {
+                            failed++;
+                        }
+                    }
+                    return "Group command: " + success + " succeeded, " + failed + " failed out of " + names.length;
+                }));
+
+        tools.put("copy_region", new AITool("copy_region",
+                "Copy all blocks in a rectangular region to an in-memory clipboard. Use paste_region to paste.",
+                AITool.objectParams(
+                        AITool.intParam("x1", "Start X", true, 0, -30000000, 30000000),
+                        AITool.intParam("y1", "Start Y", true, 0, 0, 255),
+                        AITool.intParam("z1", "Start Z", true, 0, -30000000, 30000000),
+                        AITool.intParam("x2", "End X", true, 0, -30000000, 30000000),
+                        AITool.intParam("y2", "End Y", true, 0, 0, 255),
+                        AITool.intParam("z2", "End Z", true, 0, -30000000, 30000000)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    int x1 = args.get("x1").getAsInt(), y1 = args.get("y1").getAsInt(), z1 = args.get("z1").getAsInt();
+                    int x2 = args.get("x2").getAsInt(), y2 = args.get("y2").getAsInt(), z2 = args.get("z2").getAsInt();
+                    int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
+                    int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
+                    int minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+                    net.minecraft.world.level.Level level = bot.getBot().level();
+                    java.util.List<net.minecraft.world.level.block.state.BlockState> blocks = new java.util.ArrayList<>();
+                    int w = maxX - minX + 1, h = maxY - minY + 1, d = maxZ - minZ + 1;
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                blocks.add(level.getBlockState(new net.minecraft.core.BlockPos(x, y, z)));
+                            }
+                        }
+                    }
+                    clipboard = blocks;
+                    clipboardSize = new int[]{w, h, d};
+                    return "Copied " + blocks.size() + " blocks (" + w + "x" + h + "x" + d + ") to clipboard";
+                }));
+
+        tools.put("paste_region", new AITool("paste_region",
+                "Paste a previously copied region to a target location.",
+                AITool.objectParams(
+                        AITool.intParam("x", "Target X coordinate", true, 0, -30000000, 30000000),
+                        AITool.intParam("y", "Target Y coordinate", true, 0, 0, 255),
+                        AITool.intParam("z", "Target Z coordinate", true, 0, -30000000, 30000000)),
+                (args, bot) -> {
+                    if (bot == null) return noBot();
+                    if (clipboard == null || clipboard.isEmpty()) return "No region in clipboard. Use copy_region first.";
+                    int tx = args.get("x").getAsInt(), ty = args.get("y").getAsInt(), tz = args.get("z").getAsInt();
+                    net.minecraft.world.level.Level level = bot.getBot().level();
+                    int idx = 0;
+                    for (int x = 0; x < clipboardSize[0]; x++) {
+                        for (int y = 0; y < clipboardSize[1]; y++) {
+                            for (int z = 0; z < clipboardSize[2]; z++) {
+                                level.setBlockAndUpdate(new net.minecraft.core.BlockPos(tx + x, ty + y, tz + z), clipboard.get(idx));
+                                idx++;
+                            }
+                        }
+                    }
+                    return "Pasted " + clipboard.size() + " blocks at (" + tx + "," + ty + "," + tz + ")";
+                }));
     }
 
     private static boolean targetExists(String name) {
@@ -276,5 +483,13 @@ public final class MinecraftToolManager {
             }
         }
         return null;
+    }
+
+    private static net.minecraft.world.level.block.state.BlockState blockStateFromString(String name) {
+        if (name == null || name.isEmpty()) throw new IllegalArgumentException("empty block name");
+        net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(name);
+        if (id == null || !net.minecraft.core.registries.BuiltInRegistries.BLOCK.containsKey(id))
+            throw new IllegalArgumentException("unknown block: " + name);
+        return net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(id).defaultBlockState();
     }
 }

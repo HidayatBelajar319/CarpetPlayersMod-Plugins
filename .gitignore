@@ -19,6 +19,9 @@ Plugins/1.21.11/patchwork/
 # ===== Local workspace / cloned dependency sources =====
 .slim/
 
+# ===== Deepwork state =====
+.slim/deepwork/
+
 # ===== Secrets - DO NOT COMMIT =====
 Secret.env
 

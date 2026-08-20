@@ -25,6 +25,11 @@ public class ModConfig {
     public int pvpTargetRadius = 16;
     public int baseTargetRadius = 8;
     public boolean debugLogging = true;
+    public boolean rankSystemEnabled = false;  // opt-in rank system
+    public int moderatorMaxBots = 10;           // override for moderator max bots
+    public int userMaxBots = 0;                 // override for user max bots (0 = cannot spawn)
+    public boolean persistentBots = false;     // save bot configs across restarts
+    public int autoSaveIntervalMinutes = 5;    // auto-save interval in minutes
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static ModConfig instance = new ModConfig();

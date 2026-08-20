@@ -28,6 +28,9 @@ public class ModConfig {
     public int pvpTargetRadius = 16;
     public int baseTargetRadius = 8;
     public boolean debugLogging = true;
+    public boolean rankSystemEnabled = false;
+    public int moderatorMaxBots = 10;
+    public int userMaxBots = 0;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static ModConfig instance = new ModConfig();

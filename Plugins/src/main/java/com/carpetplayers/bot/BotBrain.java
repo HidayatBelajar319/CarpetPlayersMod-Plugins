@@ -20,6 +20,7 @@ import net.minecraft.server.v1_16_R3.PlayerList;
 import net.minecraft.server.v1_16_R3.Vec3D;
 import net.minecraft.server.v1_16_R3.WorldServer;
 import net.minecraft.server.v1_16_R3.IRegistry;
+import org.bukkit.Bukkit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -253,6 +254,38 @@ public class BotBrain {
             return;
         }
         bot.inventory.itemInHandIndex = slot;
+    }
+
+    /**
+     * Menjalankan perintah server atas nama bot (seolah-olah bot mengetik perintah).
+     * Untuk perintah "help", kembalikan daftar perintah yang tersedia agar AI
+     * dapat mempelajari perintah apa saja yang bisa dijalankan di server ini.
+     */
+    public String aiRunCommand(String command) {
+        if (command == null || command.trim().isEmpty()) {
+            return "Perintah kosong";
+        }
+        String cmd = command.trim();
+        if (cmd.startsWith("/")) {
+            cmd = cmd.substring(1);
+        }
+        String lower = cmd.toLowerCase(Locale.ROOT);
+        if (lower.equals("help") || lower.startsWith("help ")) {
+            StringBuilder sb = new StringBuilder("Perintah tersedia: ");
+            for (String name : Bukkit.getCommandMap().getKnownCommands().keySet()) {
+                if (name != null && !name.isEmpty() && !name.contains(":")) {
+                    sb.append('/').append(name).append(' ');
+                }
+            }
+            return sb.toString();
+        }
+        try {
+            boolean ok = bot.getBukkitPlayer().performCommand(cmd);
+            return ok ? "Command executed: /" + cmd : "Failed to execute command: /" + cmd;
+        } catch (Exception e) {
+            return "Error executing command /" + cmd + ": "
+                    + (e.getMessage() != null ? e.getMessage() : e.toString());
+        }
     }
 
     public void aiStop() {

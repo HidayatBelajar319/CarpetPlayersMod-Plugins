@@ -3,6 +3,7 @@ package com.carpetplayers;
 import com.carpetplayers.ai.AIProviderManager;
 import com.carpetplayers.bot.BotManager;
 import com.carpetplayers.config.ModConfig;
+import com.carpetplayers.rank.RankManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
@@ -22,6 +23,7 @@ public final class CarpetPlayersPlugin extends JavaPlugin {
         // Load/create the config file right at startup (server-side),
         // so the config file is available before players join.
         ModConfig.ensureLoaded();
+        RankManager.init();
         AIProviderManager.instance().ensureLoaded();
         BotManager.registerCommands(this);
         BotManager.registerEvents(this);

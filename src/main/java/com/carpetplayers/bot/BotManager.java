@@ -5,6 +5,8 @@ import com.carpetplayers.CarpetPlayersMod;
 import com.carpetplayers.ai.AICommands;
 import com.carpetplayers.ai.MinecraftToolManager;
 import com.carpetplayers.config.ModConfig;
+import com.carpetplayers.rank.Rank;
+import com.carpetplayers.rank.RankManager;
 import com.mojang.brigadier.CommandDispatcher;import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -34,6 +37,7 @@ public final class BotManager {
     public static final Map<UUID, EntityPlayerMPFake> CONTROLLED = new ConcurrentHashMap<>();
 
     private static int nameCounter = 0;
+    private static long autoSaveCounter = 0;
 
     private BotManager() {}
 
@@ -114,6 +118,23 @@ public final class BotManager {
                                         .then(Commands.literal("diamond_basic").executes(ctx -> applyKit(ctx, "diamond_basic")))
                                 )
                         )
+                        .then(Commands.literal("rank")
+                                .then(Commands.literal("set")
+                                        .then(Commands.argument("player", StringArgumentType.word())
+                                                .then(Commands.argument("rank", StringArgumentType.word())
+                                                        .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.asList("admin", "moderator", "user"), b))
+                                                        .executes(BotManager::rankSet))))
+                                .then(Commands.literal("list").executes(BotManager::rankList))
+                                .then(Commands.literal("remove")
+                                        .then(Commands.argument("player", StringArgumentType.word())
+                                                .executes(BotManager::rankRemove)))
+                                .then(Commands.literal("default")
+                                        .then(Commands.argument("rank", StringArgumentType.word())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
+                                                        Arrays.asList("admin", "moderator", "user"), b))
+                                                .executes(BotManager::rankDefault)))
+                        )
         );
     }
 
@@ -132,7 +153,17 @@ public final class BotManager {
     private static int spawn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         int count = IntegerArgumentType.getInteger(context, "count");
-        count = Math.min(count, ModConfig.instance.maxBots - BOTS.size());
+        if (ModConfig.instance.rankSystemEnabled) {
+            int rankMax = RankManager.getMaxBots(player.getUUID());
+            if (rankMax == 0) {
+                context.getSource().sendFailure(new TextComponent("Your rank does not allow spawning bots"));
+                return 0;
+            }
+            int effectiveMax = rankMax > 0 ? Math.min(rankMax, ModConfig.instance.maxBots) : ModConfig.instance.maxBots;
+            count = Math.min(count, effectiveMax - BOTS.size());
+        } else {
+            count = Math.min(count, ModConfig.instance.maxBots - BOTS.size());
+        }
         if (count <= 0) {
             context.getSource().sendFailure(new TextComponent(
                     "Cannot spawn more bots: maximum " + ModConfig.instance.maxBots + " reached"));
@@ -154,7 +185,17 @@ public final class BotManager {
     private static int spawnPvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         int count = IntegerArgumentType.getInteger(context, "count");
-        count = Math.min(count, ModConfig.instance.maxBots - BOTS.size());
+        if (ModConfig.instance.rankSystemEnabled) {
+            int rankMax = RankManager.getMaxBots(player.getUUID());
+            if (rankMax == 0) {
+                context.getSource().sendFailure(new TextComponent("Your rank does not allow spawning bots"));
+                return 0;
+            }
+            int effectiveMax = rankMax > 0 ? Math.min(rankMax, ModConfig.instance.maxBots) : ModConfig.instance.maxBots;
+            count = Math.min(count, effectiveMax - BOTS.size());
+        } else {
+            count = Math.min(count, ModConfig.instance.maxBots - BOTS.size());
+        }
         if (count <= 0) {
             context.getSource().sendFailure(new TextComponent(
                     "Cannot spawn more bots: maximum " + ModConfig.instance.maxBots + " reached"));
@@ -311,6 +352,11 @@ public final class BotManager {
     }
 
     public static void tick(MinecraftServer server) {
+        autoSaveCounter++;
+        if (ModConfig.instance.persistentBots && autoSaveCounter >= ModConfig.instance.autoSaveIntervalMinutes * 20L * 60L) {
+            autoSaveCounter = 0;
+            BotPersistence.saveBots();
+        }
         ModConfig.ensureLoaded();
         if (BOTS.isEmpty() && CONTROLLED.isEmpty()) {
             return;
@@ -338,6 +384,10 @@ public final class BotManager {
                 brain.tickControlled(controller);
             }
         }
+    }
+
+    public static void loadPersistentBots(MinecraftServer server) {
+        BotPersistence.loadBots(server);
     }
 
     private static String nextName(MinecraftServer server) {
@@ -389,5 +439,70 @@ public final class BotManager {
         } catch (CommandSyntaxException e) {
             return 0;
         }
+    }
+
+    private static int rankSet(CommandContext<CommandSourceStack> context) {
+        String playerName = StringArgumentType.getString(context, "player");
+        String rankName = StringArgumentType.getString(context, "rank");
+        Rank rank = Rank.fromName(rankName);
+
+        MinecraftServer server = context.getSource().getServer();
+        ServerPlayer target = server.getPlayerList().getPlayerByName(playerName);
+        UUID targetUuid = target != null ? target.getUUID() : null;
+
+        if (targetUuid == null) {
+            context.getSource().sendFailure(new TextComponent("Player '" + playerName + "' not found online"));
+            return 0;
+        }
+
+        RankManager.setRank(targetUuid, rank);
+        context.getSource().sendSuccess(new TextComponent(
+                "Set rank of " + playerName + " to " + rank.getName()), true);
+        if (target != null) {
+            target.sendMessage(new TextComponent("Your rank has been set to " + rank.getName()), target.getUUID());
+        }
+        return 1;
+    }
+
+    private static int rankList(CommandContext<CommandSourceStack> context) {
+        Map<UUID, Rank> allRanks = RankManager.getAllRanks();
+        if (allRanks.isEmpty()) {
+            context.getSource().sendSuccess(new TextComponent("No ranks assigned. Default: " + RankManager.getDefaultRank().getName()), false);
+            return 0;
+        }
+        MinecraftServer server = context.getSource().getServer();
+        StringBuilder sb = new StringBuilder("Ranks:");
+        for (Map.Entry<UUID, Rank> entry : allRanks.entrySet()) {
+            ServerPlayer p = server.getPlayerList().getPlayer(entry.getKey());
+            String name = p != null ? p.getName().getString() : entry.getKey().toString().substring(0, 8) + "...";
+            sb.append("\n  ").append(name).append(" -> ").append(entry.getValue().getName());
+        }
+        sb.append("\nDefault: ").append(RankManager.getDefaultRank().getName());
+        context.getSource().sendSuccess(new TextComponent(sb.toString()), false);
+        return 1;
+    }
+
+    private static int rankRemove(CommandContext<CommandSourceStack> context) {
+        String playerName = StringArgumentType.getString(context, "player");
+        MinecraftServer server = context.getSource().getServer();
+        ServerPlayer target = server.getPlayerList().getPlayerByName(playerName);
+
+        if (target == null) {
+            context.getSource().sendFailure(new TextComponent("Player '" + playerName + "' not found online"));
+            return 0;
+        }
+
+        RankManager.removeRank(target.getUUID());
+        context.getSource().sendSuccess(new TextComponent(
+                "Removed rank for " + playerName + " (now: " + RankManager.getDefaultRank().getName() + ")"), true);
+        return 1;
+    }
+
+    private static int rankDefault(CommandContext<CommandSourceStack> context) {
+        String rankName = StringArgumentType.getString(context, "rank");
+        Rank rank = Rank.fromName(rankName);
+        RankManager.setDefaultRank(rank);
+        context.getSource().sendSuccess(new TextComponent("Default rank set to " + rank.getName()), true);
+        return 1;
     }
 }

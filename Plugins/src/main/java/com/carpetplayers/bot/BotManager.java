@@ -7,6 +7,8 @@ import com.carpetplayers.ai.MinecraftToolManager;
 import com.carpetplayers.config.ModConfig;
 import com.carpetplayers.nms.FakePlayer;
 import com.carpetplayers.nms.FakePlayerFactory;
+import com.carpetplayers.rank.Rank;
+import com.carpetplayers.rank.RankManager;
 import net.minecraft.server.v1_16_R3.EntityPlayer;
 import net.minecraft.server.v1_16_R3.EnumGamemode;
 import net.minecraft.server.v1_16_R3.MinecraftServer;
@@ -66,7 +68,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("§f/carpetplayers <spawn|pvp|ai|control|release|remove|list|kit|useitem|interactive>");
+            sender.sendMessage("§f/carpetplayers <spawn|pvp|ai|control|release|remove|list|kit|useitem|interactive|rank>");
             return true;
         }
         switch (args[0].toLowerCase()) {
@@ -90,6 +92,8 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 return cmdList(sender);
             case "kit":
                 return cmdKit(sender, args);
+            case "rank":
+                return cmdRank(sender, args);
             default:
                 sender.sendMessage("§cSubperintah tidak dikenal: " + args[0]);
                 return true;
@@ -116,6 +120,14 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             int count = Integer.parseInt(args[1]);
             count = Math.max(1, Math.min(100, count));
             Player player = (Player) sender;
+            if (ModConfig.instance.rankSystemEnabled) {
+                int rankMax = RankManager.getMaxBots(player.getUniqueId());
+                if (rankMax == 0) {
+                    sender.sendMessage("§cYour rank does not allow spawning bots");
+                    return true;
+                }
+                count = Math.min(count, rankMax);
+            }
             List<String> spawned = spawnBots(player, count, false);
             if (spawned.isEmpty()) {
                 sender.sendMessage("§cTidak bisa spawn bot: maksimum " + ModConfig.instance.maxBots + " tercapai");
@@ -145,6 +157,14 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 try {
                     int count = Integer.parseInt(args[2]);
                     count = Math.max(1, Math.min(100, count));
+                    if (ModConfig.instance.rankSystemEnabled) {
+                        int rankMax = RankManager.getMaxBots(((Player) sender).getUniqueId());
+                        if (rankMax == 0) {
+                            sender.sendMessage("§cYour rank does not allow spawning bots");
+                            return true;
+                        }
+                        count = Math.min(count, rankMax);
+                    }
                     List<String> spawned = spawnBots((Player) sender, count, true);
                     if (spawned.isEmpty()) {
                         sender.sendMessage("§cTidak bisa spawn bot PvP: maksimum " + ModConfig.instance.maxBots + " tercapai");
@@ -360,6 +380,73 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         return true;
     }
 
+    private boolean cmdRank(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§f/carpetplayers rank <set|list|remove|default>");
+            return true;
+        }
+        switch (args[1].toLowerCase()) {
+            case "set": {
+                if (args.length < 4) {
+                    sender.sendMessage("§cUsage: /carpetplayers rank set <player> <rank>");
+                    return true;
+                }
+                Player target = Bukkit.getPlayer(args[2]);
+                if (target == null) {
+                    sender.sendMessage("§cPlayer not found: " + args[2]);
+                    return true;
+                }
+                Rank rank = Rank.fromName(args[3]);
+                RankManager.setRank(target.getUniqueId(), rank);
+                sender.sendMessage("§aSet rank of " + target.getName() + " to " + rank.getName());
+                target.sendMessage("§aYour rank has been set to " + rank.getName());
+                return true;
+            }
+            case "list": {
+                Map<UUID, Rank> allRanks = RankManager.getAllRanks();
+                if (allRanks.isEmpty()) {
+                    sender.sendMessage("§eNo ranks assigned. Default: " + RankManager.getDefaultRank().getName());
+                    return true;
+                }
+                sender.sendMessage("§6Ranks:");
+                for (Map.Entry<UUID, Rank> entry : allRanks.entrySet()) {
+                    Player p = Bukkit.getPlayer(entry.getKey());
+                    String name = p != null ? p.getName() : entry.getKey().toString().substring(0, 8) + "...";
+                    sender.sendMessage("§7  " + name + " §f-> §e" + entry.getValue().getName());
+                }
+                sender.sendMessage("§7Default: §f" + RankManager.getDefaultRank().getName());
+                return true;
+            }
+            case "remove": {
+                if (args.length < 3) {
+                    sender.sendMessage("§cUsage: /carpetplayers rank remove <player>");
+                    return true;
+                }
+                Player target = Bukkit.getPlayer(args[2]);
+                if (target == null) {
+                    sender.sendMessage("§cPlayer not found: " + args[2]);
+                    return true;
+                }
+                RankManager.removeRank(target.getUniqueId());
+                sender.sendMessage("§aRemoved rank for " + target.getName() + " (now: " + RankManager.getDefaultRank().getName() + ")");
+                return true;
+            }
+            case "default": {
+                if (args.length < 3) {
+                    sender.sendMessage("§cUsage: /carpetplayers rank default <rank>");
+                    return true;
+                }
+                Rank rank = Rank.fromName(args[2]);
+                RankManager.setDefaultRank(rank);
+                sender.sendMessage("§aDefault rank set to " + rank.getName());
+                return true;
+            }
+            default:
+                sender.sendMessage("§f/carpetplayers rank <set|list|remove|default>");
+                return true;
+        }
+    }
+
     private List<String> spawnBots(Player owner, int count, boolean pvp) {
         List<String> spawned = new ArrayList<>();
         count = Math.min(count, ModConfig.instance.maxBots - BOTS.size());
@@ -543,7 +630,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         List<String> suggestions = new ArrayList<>();
         if (args.length == 1) {
             suggestions.addAll(Arrays.asList("spawn", "pvp", "ai", "control", "release", "remove", "list", "kit",
-                    "useitem", "interactive"));
+                    "useitem", "interactive", "rank"));
         } else if (args.length == 2) {
             switch (args[0].toLowerCase()) {
                 case "pvp":
