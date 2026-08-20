@@ -31,6 +31,8 @@ public class CarpetPlayersMod implements ModInitializer {
 
         // Register commands and tick handler
         CommandRegistrationCallback.EVENT.register(BotManager::registerCommands);
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
+                com.carpetplayers.worldedit.WorldEditCommands.registerWorldEditCommands(dispatcher));
         // Load persistent bots on first server tick, then tick bots each tick
         final boolean[] loaded = {false};
         ServerTickEvents.END_SERVER_TICK.register(server -> {

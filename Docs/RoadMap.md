@@ -54,11 +54,18 @@ CarpetPlayers is a Minecraft mod/plugin project that brings fully autonomous, AI
 - [x] Updated README.md — AI-generated disclosure, Groq recommendation, full feature list
 - [x] Changelog (Docs/CHANGE.md) — version history tracking
 
-## Phase 6: Full WorldEdit Integration (PLANNED)
+## Phase 6: Full WorldEdit Integration (COMPLETED)
 
-- [ ] Full WorldEdit 1.16.X feature set (//set, //replace, //copy, //paste, //wand, //expand, //contract, //stack, //rotate, //flip, //fill, //drain, //butcher, etc.)
-- [ ] WorldEdit selection system (pos1/pos2, //wand tool)
-- [ ] History/undo system (//undo, //redo)
+- [x] WorldEditManager — per-player selection state, clipboard, undo/redo history (20-deep)
+- [x] Selection tools — //wand, //pos1, //pos2, //expand, //contract, //sel
+- [x] Generation tools — //set, //replace, //overlay, //smooth, //deform
+- [x] Shape generators — //sphere, //hsphere, //cyl, //hcyl, //pyramid, //hpyramid
+- [x] Clipboard tools — //copy, //cut, //paste, //rotate, //flip, //stack
+- [x] Environment tools — //drain, //butcher, //fill, //naturalize
+- [x] Info tools — //size, //count
+- [x] History — //undo, //redo
+- [x] 21 WorldEdit AI tools registered in MinecraftToolManager
+- [x] /carpetplayers we <subcommand> commands (31 subcommands)
 
 ## Phase 7: Polish & Community (PLANNED)
 
@@ -88,5 +95,8 @@ Initial release with core features: bot spawning (normal + PvP), full AI brain w
 - **Phase 5B (Real-Sync):** /reload hot-syncs all configs (ModConfig, AI providers, ranks, bot persistence) without restart. New `/carpetplayers reload` command.
 - **Phase 5C (Recording):** Record & playback bot actions. Save/load recordings as JSON. Commands: `record start/stop/save/load/play/list`.
 - **Phase 5D (A* Pathfinding):** A* pathfinding for bots — navigate around obstacles. New `navigate_to` AI tool.
-- **Phase 5E (AI Credits):** Token usage tracking from OpenAI/Gemini APIs + per-action credit budget (configurable 1-5 credits). Budget exceeded → graceful stop.
+- **Phase 5E (AI Credits):** Token usage tracking from OpenAI/Gemini APIs + per-action credit budget (configurable 1-5 credits). Budget exceeded -> graceful stop.
 - **Phase 5A (Docs):** Updated README.md with AI-generated disclosure, Groq recommendation. New CHANGE.md changelog.
+
+### v1.3.0 — Full WorldEdit (Unreleased)
+- **Phase 6 (WorldEdit):** Full WorldEdit 1.16.X integration — 31 tools, 21 AI tools, `/carpetplayers we` command tree. Selection, shapes, clipboard, environment, undo/redo.

@@ -448,6 +448,184 @@ public final class MinecraftToolManager {
                     bot.navigateTo(new net.minecraft.core.BlockPos(x, y, z));
                     return "Navigating to (" + x + ", " + y + ", " + z + ")";
                 }));
+
+        // === WorldEdit Tools (operate on nearest player) ===
+
+        tools.put("we_wand", new AITool("we_wand", "Give the nearest player a WorldEdit selection wand (wooden axe)",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.wand(p);
+                }));
+
+        tools.put("we_pos1", new AITool("we_pos1", "Set WorldEdit position 1 at player's location",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.pos1(p, p.blockPosition());
+                }));
+
+        tools.put("we_pos2", new AITool("we_pos2", "Set WorldEdit position 2 at player's location",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.pos2(p, p.blockPosition());
+                }));
+
+        tools.put("we_set", new AITool("we_set", "Fill WorldEdit selection with a block type",
+                AITool.objectParams(AITool.stringParam("block", "Block to fill with (e.g. minecraft:stone)", true)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.set(p, args.get("block").getAsString());
+                }));
+
+        tools.put("we_replace", new AITool("we_replace", "Replace one block type with another in selection",
+                AITool.objectParams(
+                        AITool.stringParam("from", "Block to replace", true),
+                        AITool.stringParam("to", "Replacement block", true)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.replace(p, args.get("from").getAsString(), args.get("to").getAsString());
+                }));
+
+        tools.put("we_copy", new AITool("we_copy", "Copy WorldEdit selection to clipboard",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.copy(p);
+                }));
+
+        tools.put("we_cut", new AITool("we_cut", "Cut WorldEdit selection to clipboard (sets area to air)",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.cut(p);
+                }));
+
+        tools.put("we_paste", new AITool("we_paste", "Paste clipboard at player's position",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.paste(p);
+                }));
+
+        tools.put("we_undo", new AITool("we_undo", "Undo the last WorldEdit operation",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.undo(p);
+                }));
+
+        tools.put("we_redo", new AITool("we_redo", "Redo the last undone WorldEdit operation",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.redo(p);
+                }));
+
+        tools.put("we_sphere", new AITool("we_sphere", "Create a sphere of blocks at player's position",
+                AITool.objectParams(
+                        AITool.stringParam("block", "Block type", true),
+                        AITool.intParam("radius", "Sphere radius", true, 5, 1, 50)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.sphere(p, args.get("block").getAsString(), args.get("radius").getAsInt());
+                }));
+
+        tools.put("we_cylinder", new AITool("we_cylinder", "Create a cylinder of blocks at player's position",
+                AITool.objectParams(
+                        AITool.stringParam("block", "Block type", true),
+                        AITool.intParam("radius", "Cylinder radius", true, 5, 1, 50),
+                        AITool.intParam("height", "Cylinder height", false, 1, 1, 50)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    int h = args.has("height") ? args.get("height").getAsInt() : 1;
+                    return com.carpetplayers.worldedit.WorldEditTools.cylinder(p, args.get("block").getAsString(), args.get("radius").getAsInt(), h);
+                }));
+
+        tools.put("we_pyramid", new AITool("we_pyramid", "Create a pyramid of blocks at player's position",
+                AITool.objectParams(
+                        AITool.stringParam("block", "Block type", true),
+                        AITool.intParam("size", "Pyramid size", true, 5, 1, 50)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.pyramid(p, args.get("block").getAsString(), args.get("size").getAsInt());
+                }));
+
+        tools.put("we_butcher", new AITool("we_butcher", "Kill all non-player entities in a radius",
+                AITool.objectParams(
+                        AITool.intParam("radius", "Kill radius", false, 20, 1, 100)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    int r = args.has("radius") ? args.get("radius").getAsInt() : 20;
+                    return com.carpetplayers.worldedit.WorldEditTools.butcher(p, r);
+                }));
+
+        tools.put("we_overlay", new AITool("we_overlay", "Place a block layer on top of the selection surface",
+                AITool.objectParams(AITool.stringParam("block", "Block to overlay", true)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.overlay(p, args.get("block").getAsString());
+                }));
+
+        tools.put("we_naturalize", new AITool("we_naturalize", "Naturalize terrain in selection (stone->dirt->grass pattern)",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.naturalize(p);
+                }));
+
+        tools.put("we_size", new AITool("we_size", "Get WorldEdit selection size and volume info",
+                AITool.noParams(), (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.size(p);
+                }));
+
+        tools.put("we_count", new AITool("we_count", "Count blocks of a type in the selection",
+                AITool.objectParams(AITool.stringParam("block", "Block to count", true)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.count(p, args.get("block").getAsString());
+                }));
+
+        tools.put("we_expand", new AITool("we_expand", "Expand WorldEdit selection in a direction",
+                AITool.objectParams(
+                        AITool.intParam("amount", "Amount to expand", true, 1, 1, 100),
+                        AITool.enumParam("direction", "Direction: up, down, north, south, east, west, all", true,
+                                "up", "down", "north", "south", "east", "west", "all")),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.expand(p, args.get("amount").getAsInt(), args.get("direction").getAsString());
+                }));
+
+        tools.put("we_rotate", new AITool("we_rotate", "Rotate clipboard by degrees (90, 180, 270)",
+                AITool.objectParams(AITool.intParam("angle", "Rotation angle in degrees", true, 90, 90, 270)),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.rotate(p, args.get("angle").getAsInt());
+                }));
+
+        tools.put("we_stack", new AITool("we_stack", "Stack/repeat selection N times in a direction",
+                AITool.objectParams(
+                        AITool.intParam("count", "Number of times to stack", true, 1, 1, 20),
+                        AITool.enumParam("direction", "Direction: up, down, north, south, east, west", true,
+                                "up", "down", "north", "south", "east", "west")),
+                (args, bot) -> {
+                    net.minecraft.server.level.ServerPlayer p = getNearestPlayer(bot);
+                    if (p == null) return "No players online";
+                    return com.carpetplayers.worldedit.WorldEditTools.stack(p, args.get("count").getAsInt(), args.get("direction").getAsString());
+                }));
     }
 
     /**
@@ -480,6 +658,18 @@ public final class MinecraftToolManager {
 
     private static String noBot() {
         return "Bot not found (may have been removed)";
+    }
+
+    private static net.minecraft.server.level.ServerPlayer getNearestPlayer(BotBrain bot) {
+        try {
+            if (bot == null || bot.getBot() == null) return null;
+            net.minecraft.server.MinecraftServer server = bot.getBot().getServer();
+            if (server == null) return null;
+            java.util.List<net.minecraft.server.level.ServerPlayer> players = server.getPlayerList().getPlayers();
+            return players.isEmpty() ? null : players.get(0);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public List<AITool> getTools() {
