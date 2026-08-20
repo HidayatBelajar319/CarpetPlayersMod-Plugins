@@ -44,6 +44,10 @@ public class CarpetPlayersClient implements ClientModInitializer {
     }
 
     public static void requestBots() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) {
+            return; // not in-game, can't send packets
+        }
         ClientPlayNetworking.send(ModPackets.REQUEST_BOTS, new FriendlyByteBuf(
             net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create()));
     }

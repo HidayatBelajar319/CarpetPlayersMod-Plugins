@@ -18,8 +18,10 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("RETURN"))
     private void carpetplayers_addMenuButton(CallbackInfo ci) {
+        // Place button next to Options/Quit row at bottom center
+        int centerX = this.width / 2;
         this.addButton(
-            new Button(4, 4, 120, 20, new TextComponent("Carpet Players"),
+            new Button(centerX - 100, this.height - 51, 200, 20, new TextComponent("Carpet Players"),
                 button -> net.minecraft.client.Minecraft.getInstance().setScreen(
                     new CarpetPlayersScreen(this)
                 )

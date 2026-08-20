@@ -167,12 +167,14 @@ public class CarpetPlayersScreen extends Screen {
     }
 
     private void sendAction(String action) {
+        if (this.minecraft.level == null || this.minecraft.player == null) return;
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeUtf(action);
         ClientPlayNetworking.send(ModPackets.BOT_ACTION, buf);
     }
 
     private void sendActionWith(String action, String param) {
+        if (this.minecraft.level == null || this.minecraft.player == null) return;
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeUtf(action);
         buf.writeUtf(param);
@@ -180,6 +182,7 @@ public class CarpetPlayersScreen extends Screen {
     }
 
     private void sendKitAction(String botname, String kit) {
+        if (this.minecraft.level == null || this.minecraft.player == null) return;
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeUtf("kit");
         buf.writeUtf(botname);
@@ -188,6 +191,7 @@ public class CarpetPlayersScreen extends Screen {
     }
 
     private void sendToggle(String action, boolean enabled) {
+        if (this.minecraft.level == null || this.minecraft.player == null) return;
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeUtf(action);
         buf.writeBoolean(enabled);
