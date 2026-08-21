@@ -1,0 +1,228 @@
+# 🔥 CARPETPLAYERS — MASTER MEGA PROMPT 🔥
+# Full development plan & feature specification
+# Last updated: 2026-08-21
+
+---
+
+## 📋 STATUS SEKARANG
+
+✅ **Phase 1-7 SELESAI** — Core bot system, AI integration, UI, WorldEdit, Waypoint system
+🔨 **Phase 8 NEXT** — Enhanced bot behavior, config editor, movement fixes
+⏳ **Phase 9 PLANNED** — Polish, publishing, community
+
+---
+
+## 🎯 TUGAS BERIKUTNYA (Phase 8: Enhanced Bot Behavior)
+
+### 8.1 Fix Movement saat PVP 🥊
+
+**Masalah:** Bot movement saat PVP kurang natural, sering kakuh, tidak seperti player asli.
+
+**Yang harus diperbaiki:**
+- Bot harus bisa **strafing** (gerak ke kiri/kanan) secara natural saat attack
+- Bot harus bisa **sprint** ke target lalu **stop sprint** sebelum attack (sprint-reset)
+- Bot harus bisa **jump** saat combat untuk menghindari serangan
+- Bot harus punya **gap management** — mundur saat health rendah, maju saat musuh lemah
+- Bot harus bisa **side-step** (menghindari serangan projectile)
+- Movement harus bisa diatur langsung lewat command, bukan hanya config file!
+
+**Command baru:**
+```
+/carpetplayers pvp movement <botname> <aggressive|defensive|balanced>
+/carpetplayers pvp strafe <true|false>
+/carpetplayers pvp sprint-reset <true|false>
+```
+
+### 8.2 Interactive Bot — Offline Mode 🤖
+
+**Masalah:** Ketika AI provider gagal terhubung (no internet, API down, quota habis), bot menjadi useless.
+
+**Solusi: Offline Mode System**
+- Ketika AI provider tidak tersedia, bot fallback ke **offline mode**
+- Offline mode punya behavior tree sederhana:
+  - Follow player → Wander → Mine nearby blocks → Return to player
+  - Bisa respond chat commands tanpa AI (follow, stop, wander, chill, eat)
+  - Bisa defend diri sendiri saat diserang (basic melee attack)
+- Toggle: `/carpetplayers ai offline <true|false>`
+- Status indicator: `/carpetplayers ai status` menunjukkan "Mode: Offline" vs "Mode: Online"
+
+### 8.3 Bot Environment Awareness 👁️
+
+**Konsep:** Bot bisa melihat block di sekitarnya dan bereaksi terhadap environment.
+
+**Fitur:**
+- Bot mendeteksi block di radius tertentu (configurable: `awarenessRadius`)
+- Bot bisa **navigate ke block tertentu** lalu **hancurkan block** tersebut
+- Bot bisa **kumpulkan block** (pickup item yang jatuh)
+- Bot bisa **hindari bahaya** (lava, void,岩漿, etc.)
+- AI tool baru: `scan_area` — scan block di radius tertentu
+- AI tool baru: `goto_block` — navigate ke block terdekat tipe tertentu
+- AI tool baru: `break_block` — hancurkan block di posisi tertentu
+
+**Note:** Ada reference code untuk command-block version di Bedrock/Java (bukan mod code), tapi kita implementasi sendiri dari nol.
+
+---
+
+## 📝 IN-GAME CONFIGURATION EDITOR
+
+### 8.4 Config File Editor 📄
+
+**Konsep:** Player bisa edit file konfigurasi langsung di dalam game tanpa keluar.
+
+**Command:**
+```
+/carpetplayers config file <filename>
+```
+
+**Behavior:**
+1. Tab-complete filename dari daftar file yang tersedia di config folder
+2. Buka GUI editor di layar
+3. Editor menampilkan isi file dengan **syntax highlighting** (warna untuk JSON keys, values, comments)
+4. **Autocomplete** untuk JSON keys dan values
+5. Tombol **Save** — file langsung ter-update di disk
+6. Tombol **Cancel** — tutup tanpa save
+7. Tombol **Reload** — reload file dari disk
+
+**File yang bisa di-edit:**
+- `carpetplayers-config.json`
+- `minecraft-ai/providers.json`
+- `carpetplayers-ranks.json`
+
+### 8.5 Syntax Highlighting & Code Editor Color 🎨
+
+**Konsep:** Karena editor biasanya text polos, kita inject warna menggunakan Java.
+
+**Implementation:**
+- Parse JSON file → tokenize → apply colors:
+  - **Keys:** Aqua/Blue
+  - **String values:** Green
+  - **Number values:** Gold
+  - **Boolean values:** Light Purple
+  - **Null:** Gray
+  - **Brackets:** White
+  - **Errors:** Red
+- Syntax highlighting berjalan real-time saat file di-load
+- Cursor navigation + basic editing (insert, delete, backspace)
+- Line numbers di kiri layar
+
+---
+
+## 🔄 REAL-SYNC UNTUK SEMUA FILE
+
+### 8.6 Full Reload Sync 🔄
+
+**Konsep:** Ketika player jalanin `/reload` (atau `/carpetplayers reload`), BUKAN hanya CarpetPlayers configs yang ke-sync — tapi LITERALLY semua file/folder yang di-modifikasi akan ke-sync ke Minecraft.
+
+**Flow:**
+```
+Player edit file di disk → Player jalanin /reload
+→ CarpetPlayers scan semua file yang di-watch
+→ Detect perubahan (hash comparison)
+→ Reload semua config yang berubah
+→ Reload datapack world juga
+→ Semua fitur ke-update tanpa restart
+```
+
+**Yang di-watch:**
+- `config/carpetplayers-config.json`
+- `config/minecraft-ai/providers.json`
+- `config/carpetplayers-ranks.json`
+- `config/carpetplayers-waypoints/` (semua file di dalamnya)
+- World datapacks
+
+**Note:** Ini extension dari fitur Real-Sync yang sudah ada di Phase 5.
+
+---
+
+## 🏗️ IMPLEMENTATION PLAN
+
+### Priority Order:
+1. **Fix PVP Movement** (Phase 8.1) — paling penting untuk gameplay
+2. **Offline Mode** (Phase 8.2) — critical untuk UX saat AI down
+3. **Environment Awareness** (Phase 8.3) — makes bots feel alive
+4. **Config Editor** (Phase 8.4 + 8.5) — quality of life
+5. **Full Reload Sync** (Phase 8.6) — extends existing feature
+
+### Tech Notes:
+- PVP movement fix: edit `BotBrain.java` dan `PvPBot.java` — semua platform
+- Offline mode: new class `OfflineBehavior` — behavior tree tanpa AI
+- Environment awareness: new AI tools + bot brain awareness tick
+- Config editor: client-side GUI (Fabric only), server-side command handling
+- Syntax highlighting: custom `CodeEditorWidget` di Fabric GUI system
+- Real-Sync: extend existing reload handler di `ServerNetworking.java`
+
+---
+
+## 📐 ARCHITECTURE NOTES
+
+### Movement Fix Strategy:
+- Strafing: random direction tick saat combat (every 10-20 ticks)
+- Sprint-reset: sprint ke target → stop 2 ticks sebelum attack → resume
+- Jump combat: random jump saat enemy dalam jarak 2-4 blocks
+- Gap management: evaluate health ratio → retreat jika < 30%, aggro jika > 70%
+
+### Offline Mode Strategy:
+- Check provider health setiap 30 detik
+- Jika semua provider down → switch ke offline mode
+- Bot punya simple decision tree:
+  ```
+  if (enemy nearby) → fight
+  else if (food low) → eat
+  else if (owner nearby) → follow
+  else → wander
+  ```
+
+### Config Editor Strategy:
+- Fabric: extend `Screen` class for GUI
+- JSON tokenizer: simple state machine (IN_KEY, IN_STRING, IN_NUMBER, IN_BOOL, etc.)
+- Colors via `ChatFormatting` codes
+- File save: write directly to disk path
+- Tab completion: parse JSON structure → suggest next valid key
+
+---
+
+## 🎮 COMMAND SUMMARY (Phase 8 baru)
+
+```
+# PVP Movement
+/carpetplayers pvp movement <botname> <aggressive|defensive|balanced>
+/carpetplayers pvp strafe <true|false>
+/carpetplayers pvp sprint-reset <true|false>
+
+# Offline Mode
+/carpetplayers ai offline <true|false>
+
+# Environment Awareness (AI tools)
+# scan_area, goto_block, break_block (via AI act)
+
+# Config Editor
+/carpetplayers config file <filename>
+
+# Full Reload
+/carpetplayers reload  (extends existing)
+```
+
+---
+
+## 💡 CATATAN TAMBAHAN
+
+- **Paper plugins** untuk Phase 8 hanya server-side features (movement fix, offline mode, reload)
+- **Config editor** hanya untuk Fabric (butuh client GUI)
+- **Environment awareness** bisa扩展 ke Paper lewat AI tools
+- Semua command baru harus punya tab-completion
+- Semua fitur harus bisa di-toggle via config file
+- Error handling: jangan crash server kalau ada bug di fitur baru
+- Test semua fitur di singleplayer DAN multiplayer
+
+---
+
+## 📚 REFERENSI
+
+- Movement AI: study dari behavior tree games (Minecraft Villager AI, etc.)
+- Command block automation: vanilla Minecraft command block systems (Bedrock + Java edition)
+- Code editor: VS Code color scheme, Monokai theme
+- Real-Sync: Datapack reload system di vanilla Minecraft
+
+---
+
+**STATUS: Ready for implementation! 🚀**

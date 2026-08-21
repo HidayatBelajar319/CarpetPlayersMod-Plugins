@@ -25,9 +25,6 @@ Plugins/1.21.11/patchwork/
 # ===== Secrets - DO NOT COMMIT =====
 Secret.env
 
-# ===== Project plan (private) =====
-Plan.txt
-
 # ===== Scratch / temp / log files =====
 tmp-*.txt
 *.log
