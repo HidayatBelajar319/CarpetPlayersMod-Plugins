@@ -1,6 +1,6 @@
 # CarpetPlayers Mod & Plugins
 
-AI-powered Minecraft bot mod/plugin with PvP, command execution, WorldEdit tools, and multi-provider AI support.
+AI-powered Minecraft bot mod/plugin with PvP, command execution, WorldEdit tools, waypoints, and multi-provider AI support.
 
 **Fabric 1.16.5 | Paper 1.16.5 | Paper 1.21.11**
 
@@ -36,6 +36,14 @@ AI-powered Minecraft bot mod/plugin with PvP, command execution, WorldEdit tools
 - `read_file` — AI reads your source code for context
 - `group_command` — send commands to multiple bots at once
 - `run_command` — bots execute server commands
+
+### Waypoint System
+- **Per-player waypoints** — add, remove, teleport, list waypoints with persistent JSON storage
+- **16 color options** — white, gold, yellow, aqua, red, light_purple, blue, green, gray, dark_gray, dark_aqua, dark_red, dark_purple, dark_blue, dark_green, black
+- **Death waypoints** — automatic death location markers (Death -> Old Death -> removed on 3rd death)
+- **HUD overlay (Fabric)** — colored indicators with distance and direction arrows on-screen
+- **Keybind K (Fabric)** — press K to open the Carpet Players Menu
+- **Command aliases** — `/cp`, `/cps` shortcuts for `/carpetplayers`
 
 ### Client UI (Fabric)
 - **GUI menu** — visual bot management with real-time status
@@ -96,7 +104,7 @@ Other providers: OpenAI, Gemini, OpenRouter, or local Ollama (no API key needed)
 
 ## Commands Overview
 
-All commands are under the `/carpetplayers` prefix:
+All commands are under the `/carpetplayers` prefix (aliases: `/cp`, `/cps`):
 
 ### Bot Management
 - `/carpetplayers spawn <count>` — Spawn AI-free fake player bots
@@ -120,8 +128,17 @@ All commands are under the `/carpetplayers` prefix:
 - `/carpetplayers ai defensive <true|false>` — Enable defensive AI
 - `/carpetplayers ai provider <openai|gemini|openrouter|groq|local> <apikey>` — Set AI provider
 
+### Waypoints
+- `/carpetplayers waypoint add <name> [color]` — Add waypoint at current position
+- `/carpetplayers waypoint remove <name>` — Remove a waypoint
+- `/carpetplayers waypoint list` — List all waypoints
+- `/carpetplayers waypoint color <name> <color>` — Change waypoint color
+- `/carpetplayers waypoint enable <name>` / `disable <name>` — Toggle waypoint
+- `/carpetplayers waypoint tp <name>` — Teleport to waypoint
+- `/carpetplayers waypoint here <name>` — Show waypoint location
+
 ### UI & Config
-- `/carpetplayers menu` — Open the GUI menu
+- `/carpetplayers menu` — Open the GUI menu (Fabric)
 - `/carpetplayers interactive <true|false>` — Toggle interactive bot mode
 - `/carpetplayers rank set <player> <admin|moderator|user>` — Set player rank
 - `/carpetplayers rank list` — List all ranks

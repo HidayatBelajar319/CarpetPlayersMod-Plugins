@@ -67,7 +67,31 @@ CarpetPlayers is a Minecraft mod/plugin project that brings fully autonomous, AI
 - [x] 21 WorldEdit AI tools registered in MinecraftToolManager
 - [x] /carpetplayers we <subcommand> commands (31 subcommands)
 
-## Phase 7: Polish & Community (PLANNED)
+## Phase 7: Waypoint System (COMPLETED)
+
+- [x] Waypoint data model (name, x/y/z, world, color, enabled, isDeath)
+- [x] WaypointManager — CRUD, JSON persistence per-player, death waypoint tracking
+- [x] WaypointCommands — /cp waypoint add/remove/list/color/enable/disable/tp/here
+- [x] 16 color options with tab-completion
+- [x] Death waypoint (Death -> Old Death -> removed on 3rd death) — all 3 platforms
+- [x] HUD overlay (Fabric) — colored indicators with distance + direction arrows
+- [x] Keybind K (Fabric) — open Carpet Players Menu
+- [x] Command aliases — /cp, /cps on all platforms
+- [x] Config: deathWaypointEnabled, maxWaypoints, waypointHudEnabled
+- [x] TitleScreen/PauseScreen button positioning fixes
+- [x] Error spam throttling (60s cooldown)
+- [x] PvP targeting fix, buffer crash fix, AI model auto-discovery
+
+## Phase 8: Enhanced Bot Behavior (PLANNED)
+
+- [ ] PvP movement fix — improved strafing, sprinting, and gap management
+- [ ] Interactive bot offline mode — graceful fallback when AI provider unavailable
+- [ ] Bot environment awareness — bots see surrounding blocks, navigate and mine
+- [ ] In-game configuration editor — `/carpetplayers config file <name>` opens syntax-highlighted editor
+- [ ] Real-Sync for all mod files — `/reload` syncs all modified files/folders
+- [ ] Code editor with syntax highlighting and autocomplete in-game
+
+## Phase 9: Polish & Community (PLANNED)
 
 - [ ] Custom AI model training integration
 - [ ] In-game configuration GUI
@@ -98,5 +122,6 @@ Initial release with core features: bot spawning (normal + PvP), full AI brain w
 - **Phase 5E (AI Credits):** Token usage tracking from OpenAI/Gemini APIs + per-action credit budget (configurable 1-5 credits). Budget exceeded -> graceful stop.
 - **Phase 5A (Docs):** Updated README.md with AI-generated disclosure, Groq recommendation. New CHANGE.md changelog.
 
-### v1.3.0 — Full WorldEdit (Unreleased)
-- **Phase 6 (WorldEdit):** Full WorldEdit 1.16.X integration — 31 tools, 21 AI tools, `/carpetplayers we` command tree. Selection, shapes, clipboard, environment, undo/redo.
+### v1.3.0 — Waypoint System (Unreleased)
+- **Phase 7 (Waypoints):** Full per-player waypoint management — CRUD, 16 colors, death waypoints, HUD overlay, keybind K, command aliases (/cp, /cps). All 3 platforms.
+- **Bug fixes:** PvP targeting, buffer crash, TitleScreen mixin crash, AI error throttling.

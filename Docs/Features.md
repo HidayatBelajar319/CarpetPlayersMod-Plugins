@@ -123,7 +123,7 @@ Also available as an AI tool: `equip_kit` — the AI can equip a kit onto a bot 
 - **Async testing of all providers** — `/carpetplayers ai test` verifies connectivity in parallel.
 - **Configurable system prompt** — full control over the AI's behavior instructions.
 
-### 4.3 AI Tools (16 total)
+### 4.3 AI Tools (21 total)
 
 1. **get_state** — Get bot position, health, food, hand item, and current state.
 2. **move** — Move in a direction for N ticks (forward / back / left / right).
@@ -140,7 +140,12 @@ Also available as an AI tool: `equip_kit` — the AI can equip a kit onto a bot 
 13. **drop_item** — Drop item(s) from hand.
 14. **equip_kit** — Equip a PvP kit onto the bot.
 15. **run_command** — Execute a server command as the bot.
-16. **get_state** — (listed as #1; kept here for documentation of the full registered toolset)
+16. **set_blocks** — WorldEdit //set equivalent (set rectangular region to block type).
+17. **replace_blocks** — WorldEdit //replace equivalent (replace block types in region).
+18. **copy_region** / **paste_region** — clipboard-based block copy/paste.
+19. **read_file** — Read source files for AI context.
+20. **group_command** — Send commands to multiple bots at once.
+21. **navigate_to** — A* pathfinding to target coordinates.
 
 ### 4.4 AI Commands
 
@@ -190,9 +195,57 @@ When interactive mode is enabled, bots respond to chat messages:
 
 ---
 
-## 7. Configuration
+## 7. Waypoint System
 
-### 7.1 Mod/Plugin Config
+### 7.1 Waypoint Management
+
+Per-player waypoints with persistent JSON storage at `carpetplayers-waypoints/<uuid>.json`:
+
+| Command | Description |
+|---|---|
+| `/cp waypoint add <name> [color]` | Add waypoint at current position |
+| `/cp waypoint remove <name>` | Remove a waypoint |
+| `/cp waypoint list` | List all waypoints with index, color, status |
+| `/cp waypoint color <name> <color>` | Change waypoint color |
+| `/cp waypoint enable <name>` | Enable a waypoint |
+| `/cp waypoint disable <name>` | Disable a waypoint |
+| `/cp waypoint tp <name>` | Teleport to waypoint |
+| `/cp waypoint here <name>` | Show waypoint location in chat |
+
+**Aliases:** `/cp`, `/cps` work on all platforms.
+
+### 7.2 Color Options
+
+16 Minecraft color options: `white`, `gold`, `yellow`, `aqua`, `red`, `light_purple`, `blue`, `green`, `gray`, `dark_gray`, `dark_aqua`, `dark_red`, `dark_purple`, `dark_blue`, `dark_green`, `black`
+
+### 7.3 Death Waypoint
+
+Automatic death location tracking:
+
+1. **1st death:** "Death" waypoint created at death location.
+2. **2nd death:** Previous "Death" renamed to "Old Death", new "Death" created.
+3. **3rd death:** "Old Death" removed, new "Death" created.
+
+Toggle via config: `deathWaypointEnabled = true`
+
+### 7.4 HUD Overlay (Fabric Only)
+
+`WaypointRenderer` displays all enabled waypoints on-screen:
+- Colored dot + waypoint name
+- Distance in blocks
+- Direction arrow (N/S/E/W/NW/NE/SW/SE)
+- Sorted by distance (nearest first)
+- Toggle via config: `waypointHudEnabled = true`
+
+### 7.5 Keybind (Fabric Only)
+
+Press **K** to open the Carpet Players Menu (configurable in Controls > Carpet Players).
+
+---
+
+## 8. Configuration
+
+### 8.1 Mod/Plugin Config
 
 - **Fabric:** `config/carpetplayers-config.json`
 - **Paper:** `plugins/CarpetPlayers/carpetplayers-config.json`
@@ -211,8 +264,11 @@ When interactive mode is enabled, bots respond to chat messages:
 | pvpTargetRadius | 16 | PvP target detection radius |
 | baseTargetRadius | 8 | Normal target detection radius |
 | debugLogging | true | Debug output |
+| deathWaypointEnabled | true | Auto death waypoints |
+| maxWaypoints | 50 | Max waypoints per player |
+| waypointHudEnabled | true | HUD waypoint display |
 
-### 7.2 AI Provider Config
+### 8.2 AI Provider Config
 
 - **Fabric:** `config/minecraft-ai/providers.json`
 - **Paper:** `plugins/CarpetPlayers/minecraft-ai/providers.json`
@@ -221,65 +277,54 @@ Provider settings per entry: `name`, `type`, `apiKey`, `baseUrl`, `model`, `mode
 
 ---
 
-## 8. Commands Reference
+## 9. Commands Reference
 
-Full command tree (all under `/carpetplayers`, alias `/cp`):
+Full command tree (all under `/carpetplayers`, aliases `/cp` and `/cps`):
 
 ```
 /carpetplayers spawn <count>                    — Spawn normal bots
 /carpetplayers pvp spawn <count>                — Spawn PvP bots
+/carpetplayers pvp <w-tap|a-tap|s-tap|d-tap> <true|false>
+/carpetplayers pvp multipleweapons <true|false>
 /carpetplayers kit <botname> <kitname>          — Equip a kit on a bot
 /carpetplayers control <botname>                — Take direct control of a bot
 /carpetplayers release                          — Release bot control
-/carpetplayers menu                             — Open the UI menu (in development)
-/carpetplayers ai start                         — Enable AI
-/carpetplayers ai stop                          — Disable AI
-/carpetplayers ai status                        — Show provider health
-/carpetplayers ai reload                        — Reload provider config
-/carpetplayers ai test                          — Test all providers
-/carpetplayers ai act <bot> <instruction>       — AI-controlled action
+/carpetplayers menu                             — Open the UI menu (Fabric)
+/carpetplayers waypoint <subcommand>            — Waypoint management
+/carpetplayers ai start | stop | status | reload | test
+/carpetplayers ai act <bot> <instruction>
 /carpetplayers ai chat <bool>                   — Toggle AI chat
 /carpetplayers ai forget <bot>                  — Clear conversation memory
 /carpetplayers ai defensive <bool>              — Toggle defensive AI
 /carpetplayers ai provider <type> <apikey>      — Set provider API key
+/carpetplayers rank set <player> <rank>         — Set player rank
+/carpetplayers rank list | remove | default
 ```
 
 *Note: The Paper 1.21.11 plugin additionally exposes a `/carpetplayers protocol` command for protocol-level management.*
 
 ---
 
-## 9. Multi-Platform Support
+## 10. Multi-Platform Support
 
-### 9.1 Fabric 1.16.5 Mod
+### 10.1 Fabric 1.16.5 Mod
 
 - Uses the Carpet Mod's `EntityPlayerMPFake` for fake player entities.
-- Server-side only (no client UI yet).
-- Mixins: `LivingEntityMixin` (damage detection), `ServerGamePacketListenerImplMixin` (chat handling).
+- Client UI with GUI screens, Title/Pause screen mixins, keybind K.
+- HUD overlay for waypoints with colored indicators and direction arrows.
+- Mixins: `LivingEntityMixin`, `ServerGamePacketListenerImplMixin`, `TitleScreenMixin`, `PauseScreenMixin`, `ClientPlayerMixin`.
 
-### 9.2 Paper 1.16.5 Plugin
+### 10.2 Paper 1.16.5 Plugin
 
 - Custom `FakePlayer` extending `ServerPlayer`.
 - CraftBukkit integration for full plugin API access.
 - ViaVersion support for legacy clients.
+- Indonesian language for player messages.
 
-### 9.3 Paper 1.21.11 Plugin
+### 10.3 Paper 1.21.11 Plugin
 
 - Mojang-mapped NMS (no more SRG remapping headaches).
 - Custom `FakePlayer` with an embedded connection.
 - ViaVersion + ViaBackwards support for cross-version clients.
 - Additional `/carpetplayers protocol` command.
-
----
-
-## 10. UI System (NEW — In Development)
-
-An in-development graphical interface:
-
-- **ESC Menu integration** — a "Carpet Players" button in the pause menu.
-- **Main Menu button** — a mod showcase button on the title screen.
-- **`/carpetplayers menu` command** — opens the UI directly from in-game.
-- **Visual bot controller** — point-and-click bot management.
-- **Real-time status display** — live health, position, state, and AI info for every bot.
-- **One-click kit application** and **AI provider configuration** from the UI.
-
-Coming to the UI in later phases: in-game configuration GUI, multi-language support, and third-party plugin API.
+- English language for player messages.
