@@ -11,7 +11,7 @@ commands:
   carpetplayers:
     description: Main command for CarpetPlayers
     usage: /carpetplayers <spawn|pvp|ai|control|release|remove|list|kit|useitem|interactive>
-    aliases: [cp, carpet]
+    aliases: [cp, cps, carpet]
     permission: carpetplayers.admin
 
 permissions:

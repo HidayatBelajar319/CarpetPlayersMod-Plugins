@@ -9,6 +9,7 @@ import com.carpetplayers.nms.FakePlayer;
 import com.carpetplayers.nms.FakePlayerFactory;
 import com.carpetplayers.rank.Rank;
 import com.carpetplayers.rank.RankManager;
+import com.carpetplayers.waypoint.WaypointCommands;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
@@ -23,6 +24,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 import java.util.ArrayList;
@@ -64,7 +66,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             return true;
         }
         if (args.length == 0) {
-            sender.sendMessage("§f/carpetplayers <spawn|pvp|ai|control|release|remove|list|kit|useitem|interactive|rank>");
+            sender.sendMessage("§f/carpetplayers <spawn|pvp|ai|control|release|remove|list|kit|useitem|interactive|rank|waypoint>");
             return true;
         }
         switch (args[0].toLowerCase()) {
@@ -92,6 +94,8 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 return cmdRank(sender, args);
             case "protocol":
                 return cmdProtocol(sender, args);
+            case "waypoint":
+                return new WaypointCommands().onCommand(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
             default:
                 sender.sendMessage("§cUnknown subcommand: " + args[0]);
                 return true;
@@ -584,6 +588,16 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         }
     }
 
+    // ============ Death waypoint listener ============
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        if (!com.carpetplayers.config.ModConfig.instance.deathWaypointEnabled) return;
+        org.bukkit.entity.Player player = event.getEntity();
+        if (player == null) return;
+        com.carpetplayers.waypoint.WaypointManager.handleDeath(player.getUniqueId(), player.getLocation());
+    }
+
     // ============ Tab completer ============
 
     @Override
@@ -591,7 +605,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         List<String> suggestions = new ArrayList<>();
         if (args.length == 1) {
             suggestions.addAll(Arrays.asList("spawn", "pvp", "ai", "control", "release", "remove", "list", "kit",
-                    "useitem", "interactive", "protocol"));
+                    "useitem", "interactive", "protocol", "waypoint"));
         } else if (args.length == 2) {
             switch (args[0].toLowerCase()) {
                 case "pvp":

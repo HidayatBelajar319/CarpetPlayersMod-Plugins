@@ -10,7 +10,7 @@ commands:
     description: Main command for Carpet Players plugin
     usage: /carpetplayers <subcommand>
     permission: carpetplayers.admin
-    aliases: [cp, cpbot]
+    aliases: [cp, cps, cpbot]
 
 permissions:
   carpetplayers.admin:

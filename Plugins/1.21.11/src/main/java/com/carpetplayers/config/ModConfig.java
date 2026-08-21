@@ -31,6 +31,8 @@ public class ModConfig {
     public boolean rankSystemEnabled = false;
     public int moderatorMaxBots = 10;
     public int userMaxBots = 0;
+    public boolean deathWaypointEnabled = true;
+    public int maxWaypoints = 50;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static ModConfig instance = new ModConfig();

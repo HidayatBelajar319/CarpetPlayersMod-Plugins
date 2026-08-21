@@ -4,6 +4,7 @@ import com.carpetplayers.ai.AIProviderManager;
 import com.carpetplayers.bot.BotManager;
 import com.carpetplayers.config.ModConfig;
 import com.carpetplayers.rank.RankManager;
+import com.carpetplayers.waypoint.WaypointManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
@@ -27,14 +28,17 @@ public final class CarpetPlayersPlugin extends JavaPlugin {
         AIProviderManager.instance().ensureLoaded();
         BotManager.registerCommands(this);
         BotManager.registerEvents(this);
+        WaypointManager.init();
         // Tick 20x/detik di server thread, setara ServerTickEvents.END_SERVER_TICK.
         getServer().getScheduler().runTaskTimer(this, BotManager::tick, 0L, 1L);
+        WaypointManager.loadAll();
         getLogger().info("Carpet Players plugin loaded!");
     }
 
     @Override
     public void onDisable() {
         BotManager.removeAllBots();
+        WaypointManager.saveAll();
         AIProviderManager.instance().shutdown();
         getLogger().info("Carpet Players plugin disabled.");
     }
