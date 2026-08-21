@@ -50,10 +50,9 @@ public final class BotManager {
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("spawn")
                                 .then(Commands.argument("name", StringArgumentType.word())
+                                        .executes(BotManager::spawn)
                                         .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
-                                                .executes(BotManager::spawn)))
-                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
-                                        .executes(BotManager::spawn)))
+                                                .executes(BotManager::spawn))))
                         .then(Commands.literal("useitem")
                                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                                         .executes(context -> setUseItem(context))))
@@ -70,10 +69,9 @@ public final class BotManager {
                                                 .executes(context -> setMultiWeapon(context))))
                                 .then(Commands.literal("spawn")
                                         .then(Commands.argument("name", StringArgumentType.word())
+                                                .executes(BotManager::spawnPvp)
                                                 .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
-                                                        .executes(BotManager::spawnPvp)))
-                                        .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
-                                                .executes(BotManager::spawnPvp))))
+                                                        .executes(BotManager::spawnPvp)))))
                         .then(Commands.literal("ai")
                                 .then(Commands.literal("start").executes(AICommands::start))
                                 .then(Commands.literal("stop").executes(AICommands::stop))
@@ -194,12 +192,12 @@ public final class BotManager {
 
     private static int spawn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        int count = IntegerArgumentType.getInteger(context, "count");
-        String firstName = null;
+        String name = StringArgumentType.getString(context, "name");
+        int count = 1;
         try {
-            firstName = StringArgumentType.getString(context, "name");
+            count = IntegerArgumentType.getInteger(context, "count");
         } catch (Exception ignored) {
-            // name argument is optional
+            // count is optional, defaults to 1
         }
         if (ModConfig.instance.rankSystemEnabled) {
             int rankMax = RankManager.getMaxBots(player.getUUID());
@@ -220,7 +218,7 @@ public final class BotManager {
         Vec3 pos = player.position();
         ResourceKey<Level> dimension = player.getLevel().dimension();
         List<String> spawned = spawnBots(context.getSource().getServer(), count, pos, dimension,
-                player.yRot, player.xRot, false, player.getUUID(), firstName);
+                player.yRot, player.xRot, false, player.getUUID(), name);
         if (spawned.isEmpty()) {
             context.getSource().sendFailure(new TextComponent("Could not spawn any bots"));
             return 0;
@@ -232,12 +230,12 @@ public final class BotManager {
 
     private static int spawnPvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
-        int count = IntegerArgumentType.getInteger(context, "count");
-        String firstName = null;
+        String name = StringArgumentType.getString(context, "name");
+        int count = 1;
         try {
-            firstName = StringArgumentType.getString(context, "name");
+            count = IntegerArgumentType.getInteger(context, "count");
         } catch (Exception ignored) {
-            // name argument is optional
+            // count is optional, defaults to 1
         }
         if (ModConfig.instance.rankSystemEnabled) {
             int rankMax = RankManager.getMaxBots(player.getUUID());
@@ -258,7 +256,7 @@ public final class BotManager {
         Vec3 pos = player.position();
         ResourceKey<Level> dimension = player.getLevel().dimension();
         List<String> spawned = spawnBots(context.getSource().getServer(), count, pos, dimension,
-                player.yRot, player.xRot, true, player.getUUID(), firstName);
+                player.yRot, player.xRot, true, player.getUUID(), name);
         if (spawned.isEmpty()) {
             context.getSource().sendFailure(new TextComponent("Could not spawn any PvP bots"));
             return 0;
@@ -270,26 +268,22 @@ public final class BotManager {
 
     private static List<String> spawnBots(MinecraftServer server, int count, Vec3 pos,
                                           ResourceKey<Level> dimension, float yaw, float pitch, boolean pvp,
-                                          UUID ownerUuid, String firstName) {
+                                          UUID ownerUuid, String name) {
         List<String> spawned = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            String name;
-            if (i == 0 && firstName != null && !firstName.isEmpty()) {
-                // First bot uses the user-specified name
-                name = firstName;
-                // Handle name collision
-                if (isNameTaken(server, name)) {
-                    int suffix = 2;
-                    while (isNameTaken(server, name + suffix)) {
-                        suffix++;
-                    }
-                    name = name + suffix;
-                }
-            } else {
-                // Subsequent bots cycle through defaults: player name, Alex, Steve, etc.
-                name = nextName(server);
+            String botName = name;
+            if (count > 1) {
+                botName = (i == 0) ? name : name + (i + 1);
             }
-            EntityPlayerMPFake fake = EntityPlayerMPFake.createFake(name, server, pos.x, pos.y, pos.z,
+            // Handle name collision
+            if (isNameTaken(server, botName)) {
+                int suffix = (count > 1) ? (i + 2) : 2;
+                while (isNameTaken(server, name + suffix)) {
+                    suffix++;
+                }
+                botName = name + suffix;
+            }
+            EntityPlayerMPFake fake = EntityPlayerMPFake.createFake(botName, server, pos.x, pos.y, pos.z,
                     yaw, pitch, dimension, GameType.SURVIVAL, false);
             if (fake == null) {
                 continue;
@@ -301,8 +295,8 @@ public final class BotManager {
             BotBrain brain = pvp ? new PvPBot(fake) : new BotBrain(fake);
             brain.setOwnerUuid(ownerUuid);
             BRAINS.put(fake.getUUID(), brain);
-            CarpetPlayersMod.LOGGER.info("Spawned bot {} at ({}, {}, {})", name, pos.x, pos.y, pos.z);
-            spawned.add(name);
+            CarpetPlayersMod.LOGGER.info("Spawned bot {} at ({}, {}, {})", botName, pos.x, pos.y, pos.z);
+            spawned.add(botName);
         }
         return spawned;
     }
