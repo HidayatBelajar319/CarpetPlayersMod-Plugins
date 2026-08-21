@@ -4,7 +4,8 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "TitleScreenMixin",
-    "PauseScreenMixin"
+    "PauseScreenMixin",
+    "ClientPlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

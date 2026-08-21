@@ -6,6 +6,7 @@ import com.carpetplayers.bot.BotManager;
 import com.carpetplayers.bot.BotPersistence;
 import com.carpetplayers.config.ModConfig;
 import com.carpetplayers.rank.RankManager;
+import com.carpetplayers.waypoint.WaypointManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -28,9 +29,21 @@ public class CarpetPlayersMod implements ModInitializer {
         RankManager.init();
         BotPersistence.init();
         AIProviderManager.instance().ensureLoaded();
+        WaypointManager.init();
+        WaypointManager.loadAll();
 
-        // Register commands and tick handler
+        // Register commands (carpetplayers + aliases /cp, /cps)
         CommandRegistrationCallback.EVENT.register(BotManager::registerCommands);
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+            // Register /cp alias
+            com.carpetplayers.waypoint.WaypointCommands.registerWaypointCommands(dispatcher,
+                    net.minecraft.commands.Commands.literal("cp")
+                            .requires(source -> source.hasPermission(2)));
+            // Register /cps alias
+            com.carpetplayers.waypoint.WaypointCommands.registerWaypointCommands(dispatcher,
+                    net.minecraft.commands.Commands.literal("cps")
+                            .requires(source -> source.hasPermission(2)));
+        });
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) ->
                 com.carpetplayers.worldedit.WorldEditCommands.registerWorldEditCommands(dispatcher));
         // Load persistent bots on first server tick, then tick bots each tick
@@ -57,6 +70,7 @@ public class CarpetPlayersMod implements ModInitializer {
         // Register shutdown hook to clean up AI executor and save bot configs
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             BotPersistence.saveBots();
+            WaypointManager.saveAll();
             AIController.shutdown();
             AIProviderManager.instance().shutdown();
             LOGGER.info("Carpet Players Mod shut down.");

@@ -170,12 +170,18 @@ public final class BotManager {
                                     com.carpetplayers.ai.AIProviderManager.instance().reload();
                                     com.carpetplayers.rank.RankManager.init();
                                     com.carpetplayers.bot.BotPersistence.loadBots(server);
+                                    com.carpetplayers.waypoint.WaypointManager.loadAll();
                                     ctx.getSource().sendSuccess(
                                             new TextComponent("[CarpetPlayers] Configs reloaded!"), false);
                                     return 1;
                                 })
                         )
         );
+
+        // Register waypoint subcommands under /carpetplayers
+        com.carpetplayers.waypoint.WaypointCommands.registerWaypointCommands(dispatcher,
+                Commands.literal("carpetplayers")
+                        .requires(source -> source.hasPermission(2)));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> tapCommand(String tapName) {

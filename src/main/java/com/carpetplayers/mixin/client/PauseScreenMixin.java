@@ -18,9 +18,10 @@ public abstract class PauseScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("RETURN"))
     private void carpetplayers_addPauseMenuButton(CallbackInfo ci) {
-        // Place button above "Back to Game" in the pause menu
+        // Place button next to Options row (Options is at centerX-100, height/4+96, LAN at centerX+2)
+        // Put Carpet Players right after LAN button
         this.addButton(
-            new Button(this.width / 2 - 100, this.height / 4 - 34, 200, 20, new TextComponent("Carpet Players"),
+            new Button(this.width / 2 + 104, this.height / 4 + 96, 98, 20, new TextComponent("Carpet Players"),
                 button -> net.minecraft.client.Minecraft.getInstance().setScreen(
                     new CarpetPlayersScreen(this)
                 )

@@ -33,6 +33,11 @@ public class ModConfig {
     public int maxCreditsPerAction = 5;    // max credits (thousands of tokens) per AI action
     public boolean creditTrackingEnabled = true;
 
+    // Waypoint settings
+    public boolean deathWaypointEnabled = true;  // auto-create death waypoints
+    public int maxWaypoints = 100;               // max waypoints per player
+    public boolean waypointHudEnabled = true;    // show waypoint HUD overlay
+
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static ModConfig instance = new ModConfig();
     private static File configFile;

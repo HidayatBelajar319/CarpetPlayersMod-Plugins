@@ -6,6 +6,8 @@ import com.carpetplayers.bot.BotManager;
 import com.carpetplayers.bot.KitManager;
 import com.carpetplayers.bot.PvPBot;
 import com.carpetplayers.config.ModConfig;
+import com.carpetplayers.waypoint.Waypoint;
+import com.carpetplayers.waypoint.WaypointManager;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -48,6 +50,22 @@ public final class ServerNetworking {
                 (MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler,
                  FriendlyByteBuf buf, PacketSender responseSender) -> {
                     server.execute(() -> sendBotList(player));
+                });
+
+        // Client -> Server: death waypoint report
+        ServerPlayNetworking.registerGlobalReceiver(ModPackets.DEATH_WAYPOINT,
+                (MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler,
+                 FriendlyByteBuf buf, PacketSender responseSender) -> {
+                    double x = buf.readDouble();
+                    double y = buf.readDouble();
+                    double z = buf.readDouble();
+                    String dimStr = buf.readUtf();
+                    FriendlyByteBuf copy = PacketByteBufs.create();
+                    copy.writeDouble(x);
+                    copy.writeDouble(y);
+                    copy.writeDouble(z);
+                    copy.writeUtf(dimStr);
+                    server.execute(() -> handleDeathWaypoint(server, player, copy));
                 });
     }
 
@@ -163,6 +181,24 @@ public final class ServerNetworking {
             }
             default:
                 break;
+        }
+    }
+
+    private static void handleDeathWaypoint(MinecraftServer server, ServerPlayer player, FriendlyByteBuf buf) {
+        if (!ModConfig.instance.deathWaypointEnabled) return;
+
+        double x = buf.readDouble();
+        double y = buf.readDouble();
+        double z = buf.readDouble();
+        String dimStr = buf.readUtf();
+        ResourceKey<Level> dimKey = WaypointManager.stringToDimension(dimStr);
+
+        Waypoint wp = WaypointManager.handleDeath(player.getUUID(), x, y, z, dimKey);
+        if (wp != null) {
+            // Notify the player
+            player.sendMessage(
+                    new TextComponent("[Waypoint] " + wp.getName() + " created at " + wp.coordString()),
+                    player.getUUID());
         }
     }
 

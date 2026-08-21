@@ -2,18 +2,51 @@ package com.carpetplayers.client;
 
 import com.carpetplayers.client.gui.CarpetPlayersScreen;
 import com.carpetplayers.network.ModPackets;
+import com.carpetplayers.waypoint.WaypointManager;
+import com.carpetplayers.waypoint.WaypointRenderer;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.ChatFormatting;
+import org.lwjgl.glfw.GLFW;
 
 public class CarpetPlayersClient implements ClientModInitializer {
     private static CarpetPlayersScreen pendingScreen = null;
 
+    // Keybind to open Carpet Players Menu
+    public static KeyMapping openMenuKey;
+
     @Override
     public void onInitializeClient() {
+        // Register keybind: K key opens Carpet Players Menu
+        openMenuKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.carpetplayers.open_menu",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_K,
+                "Carpet Players"
+        ));
+
+        // Listen for key press every tick
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (openMenuKey.consumeClick()) {
+                if (client.screen == null && client.level != null && client.player != null) {
+                    client.setScreen(new CarpetPlayersScreen(null));
+                }
+            }
+        });
+
+        // Initialize waypoint renderer
+        WaypointRenderer.init();
+
         // Register handler for server telling us to open the menu
         ClientPlayNetworking.registerGlobalReceiver(ModPackets.OPEN_MENU, 
             (Minecraft client, ClientPacketListener handler, FriendlyByteBuf buf, PacketSender responseSender) -> {
@@ -41,6 +74,23 @@ public class CarpetPlayersClient implements ClientModInitializer {
                     }
                 });
             });
+
+        // Register handler for death waypoint notification
+        ClientPlayNetworking.registerGlobalReceiver(ModPackets.DEATH_WAYPOINT,
+            (Minecraft client, ClientPacketListener handler, FriendlyByteBuf buf, PacketSender responseSender) -> {
+                String name = buf.readUtf();
+                double x = buf.readDouble();
+                double y = buf.readDouble();
+                double z = buf.readDouble();
+                client.execute(() -> {
+                    if (client.player != null) {
+                        client.player.sendMessage(
+                            new TextComponent("[Waypoint] " + name + " created at X=" + (int)x + " Y=" + (int)y + " Z=" + (int)z)
+                                .withStyle(ChatFormatting.RED),
+                            client.player.getUUID());
+                    }
+                });
+            });
     }
 
     public static void requestBots() {
@@ -49,6 +99,6 @@ public class CarpetPlayersClient implements ClientModInitializer {
             return; // not in-game, can't send packets
         }
         ClientPlayNetworking.send(ModPackets.REQUEST_BOTS, new FriendlyByteBuf(
-            net.fabricmc.fabric.api.networking.v1.PacketByteBufs.create()));
+            PacketByteBufs.create()));
     }
 }
