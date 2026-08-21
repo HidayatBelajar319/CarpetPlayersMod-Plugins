@@ -234,8 +234,7 @@ public final class AIProviderManager {
                 providerConfig.apiKey = apiKey != null ? apiKey : "";
                 save();
                 rebuildProviders();
-                return "[AI] API key for " + providerConfig.name + " updated. Model: "
-                        + providerConfig.model + ".";
+                return fetchAndUpdateModels(providerConfig);
             }
         }
         ProviderConfig provider = defaultProvider(normalizedType);
@@ -247,8 +246,94 @@ public final class AIProviderManager {
         config.providers.add(provider);
         save();
         rebuildProviders();
-        return "[AI] Provider " + provider.name + " added. API key saved. Default model: "
-                + provider.model + ".";
+        return fetchAndUpdateModels(provider);
+    }
+
+    /**
+     * Queries the provider for available models, updates config, and returns a status message.
+     */
+    private String fetchAndUpdateModels(ProviderConfig providerConfig) {
+        try {
+            rebuildProviders();
+            AIProvider provider = null;
+            for (AIProvider p : providers) {
+                if (p.getType().equalsIgnoreCase(providerConfig.type)) {
+                    provider = p;
+                    break;
+                }
+            }
+            if (provider == null) {
+                return "[AI] API key for " + providerConfig.name + " saved (no provider instance).";
+            }
+            List<String> discovered = provider.fetchModels();
+            if (!discovered.isEmpty()) {
+                providerConfig.models.clear();
+                providerConfig.models.addAll(discovered);
+                // Auto-select best model
+                providerConfig.model = pickBestModel(providerConfig.type, discovered);
+                save();
+                return "[AI] " + providerConfig.name + ": found " + discovered.size()
+                        + " model(s). Selected: " + providerConfig.model + ".";
+            } else {
+                return "[AI] API key for " + providerConfig.name + " saved. "
+                        + "Could not discover models (check key/endpoint). Using default: "
+                        + providerConfig.model + ".";
+            }
+        } catch (Exception e) {
+            return "[AI] API key saved but model discovery failed: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Picks the best model from a list of available models for a given provider type.
+     * Prefers smaller/cheaper models for cost efficiency.
+     */
+    private String pickBestModel(String type, List<String> models) {
+        if (models.isEmpty()) return "";
+        // Preference order by provider type
+        String[][] preferred;
+        switch (type.toLowerCase()) {
+            case "groq":
+                preferred = new String[][]{
+                        {"llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it",
+                         "mixtral-8x7b-32768", "llama3-70b-8192", "llama3-8b-8192"}
+                };
+                break;
+            case "gemini":
+                preferred = new String[][]{
+                        {"gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash",
+                         "gemini-1.5-pro", "gemini-1.5-flash-8b"}
+                };
+                break;
+            case "openai":
+                preferred = new String[][]{
+                        {"gpt-4o-mini", "gpt-4o", "gpt-4.1-nano", "gpt-4.1-mini", "gpt-4.1"}
+                };
+                break;
+            case "openrouter":
+                preferred = new String[][]{
+                        // Free models first
+                        {"meta-llama/llama-3.1-8b-instruct:free",
+                         "google/gemma-2-9b-it:free",
+                         "mistralai/mistral-7b-instruct:free",
+                         "meta-llama/llama-3.3-70b-instruct:free"},
+                };
+                break;
+            default:
+                preferred = new String[0][];
+        }
+        // Try preferred models first
+        for (String[] tier : preferred) {
+            for (String pref : tier) {
+                for (String available : models) {
+                    if (available.equalsIgnoreCase(pref) || available.contains(pref)) {
+                        return available;
+                    }
+                }
+            }
+        }
+        // Fallback: pick first model in list
+        return models.get(0);
     }
 
     public String getSystemPrompt() {

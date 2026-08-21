@@ -1,5 +1,6 @@
 package com.carpetplayers.ai;
 
+import com.carpetplayers.CarpetPlayersMod;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -170,6 +171,54 @@ public class OpenAICompatibleProvider extends AbstractAIProvider {
         } catch (AIException e) {
             lastError = e.getMessage();
             return false;
+        }
+    }
+
+    /**
+     * Queries /v1/models endpoint to discover available models.
+     * Works for OpenAI, Groq, OpenRouter, and any OpenAI-compatible provider.
+     */
+    @Override
+    public List<String> fetchModels() {
+        try {
+            String base = getBaseUrl();
+            if (base == null || base.isEmpty()) {
+                if ("openrouter".equalsIgnoreCase(getType())) {
+                    base = "https://openrouter.ai/api/v1";
+                } else if ("groq".equalsIgnoreCase(getType())) {
+                    base = "https://api.groq.com/openai/v1";
+                } else {
+                    base = "https://api.openai.com/v1";
+                }
+            }
+            while (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+            String modelsUrl = base + "/models";
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", "Bearer " + getApiKey());
+            HttpResult result = getJson(modelsUrl, headers);
+            if (result.code < 200 || result.code >= 300) {
+                CarpetPlayersMod.LOGGER.warn("Failed to fetch models from {}: HTTP {}", modelsUrl, result.code);
+                return new ArrayList<>();
+            }
+            JsonObject root = new JsonParser().parse(result.body).getAsJsonObject();
+            JsonArray data = root.has("data") ? root.getAsJsonArray("data") : null;
+            if (data == null) {
+                return new ArrayList<>();
+            }
+            List<String> models = new ArrayList<>();
+            for (JsonElement el : data) {
+                JsonObject obj = el.getAsJsonObject();
+                if (obj.has("id")) {
+                    models.add(obj.get("id").getAsString());
+                }
+            }
+            CarpetPlayersMod.LOGGER.info("Discovered {} model(s) from {}", models.size(), getName());
+            return models;
+        } catch (Exception e) {
+            CarpetPlayersMod.LOGGER.warn("Failed to fetch models from {}: {}", getName(), e.getMessage());
+            return new ArrayList<>();
         }
     }
 }

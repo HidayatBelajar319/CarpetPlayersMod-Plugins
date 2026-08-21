@@ -409,7 +409,8 @@ public class BotBrain {
                 return;
             }
         }
-        Vec3 targetPos = target.position();
+        // Aim at eye level (head), not feet
+        Vec3 targetPos = target.getEyePosition(1.0F);
         actions().lookAt(targetPos);
         double distanceSq = bot.distanceToSqr(target);
         if (distanceSq > 9.0) {

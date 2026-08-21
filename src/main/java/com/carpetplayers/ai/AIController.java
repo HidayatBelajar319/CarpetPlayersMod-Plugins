@@ -26,6 +26,8 @@ public final class AIController {
     private static final int MAX_REPLY_CHARS = 500;
     private static final Map<UUID, List<AIMessage>> chatMemories = new ConcurrentHashMap<>();
     private static final Map<UUID, List<AIMessage>> actMemories = new ConcurrentHashMap<>();
+    private static final Map<String, Long> lastErrorTime = new ConcurrentHashMap<>();
+    private static final long ERROR_COOLDOWN_MS = 60000; // 1 minute between same error messages
     private static final ExecutorService executor = Executors.newCachedThreadPool(r -> {
         Thread t = new Thread(r, "carpetplayers-ai");
         t.setDaemon(true);
@@ -206,8 +208,14 @@ public final class AIController {
                 }
             }
         } catch (AIException e) {
-            deliverResult(server, r -> broadcastChatReply(botName,
-                    "Failed: " + (e.getMessage() != null ? e.getMessage() : e.toString())), null);
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+            String throttleKey = botName + ":" + errorMsg;
+            Long lastTime = lastErrorTime.get(throttleKey);
+            long now = System.currentTimeMillis();
+            if (lastTime == null || now - lastTime > ERROR_COOLDOWN_MS) {
+                lastErrorTime.put(throttleKey, now);
+                broadcastChatReply(botName, "Failed: " + errorMsg);
+            }
         }
     }
 

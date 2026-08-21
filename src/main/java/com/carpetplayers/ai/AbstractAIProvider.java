@@ -174,6 +174,46 @@ public abstract class AbstractAIProvider implements AIProvider {
         return sb.toString();
     }
 
+    protected HttpResult getJson(String url, Map<String, String> headers) throws AIException {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(getTimeoutMs());
+            connection.setReadTimeout(getTimeoutMs());
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    connection.setRequestProperty(entry.getKey(), entry.getValue());
+                }
+            }
+            int code = connection.getResponseCode();
+            InputStream stream = code >= 200 && code < 300 ? connection.getInputStream() : connection.getErrorStream();
+            String body = readAll(stream);
+            return new HttpResult(code, body);
+        } catch (java.net.ConnectException e) {
+            throw new AIException(AIException.ErrorType.NETWORK, getName(), null, 0,
+                    "Cannot connect to " + url + ": " + e.getMessage(), e);
+        } catch (java.net.SocketTimeoutException e) {
+            throw new AIException(AIException.ErrorType.NETWORK, getName(), null, 0,
+                    "Timeout connecting to " + url + ": " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new AIException(AIException.ErrorType.NETWORK, getName(), null, 0,
+                    "I/O error talking to " + url + ": " + e.getMessage(), e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    /**
+     * Queries the provider's model listing endpoint and returns available model IDs.
+     * Default implementation returns an empty list; subclasses override.
+     */
+    public List<String> fetchModels() {
+        return new ArrayList<>();
+    }
+
     protected static class HttpResult {
         public final int code;
         public final String body;

@@ -29,4 +29,11 @@ public interface AIProvider {
     void markFailure(AIException exception);
 
     boolean onCooldown();
+
+    /**
+     * Queries the provider for available model IDs. Returns empty list on failure.
+     */
+    default List<String> fetchModels() {
+        return java.util.Collections.emptyList();
+    }
 }

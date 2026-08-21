@@ -39,6 +39,9 @@ public final class BotManager {
     private static int nameCounter = 0;
     private static long autoSaveCounter = 0;
 
+    /** Default bot name pool for cycling when spawning multiple bots */
+    private static final String[] DEFAULT_NAMES = {"Alex", "Steve", "Herobrine", "Notch", "Dream"};
+
     private BotManager() {}
 
     public static void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher, boolean dedicated) {
@@ -46,6 +49,9 @@ public final class BotManager {
                 Commands.literal("carpetplayers")
                         .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("spawn")
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
+                                                .executes(BotManager::spawn)))
                                 .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
                                         .executes(BotManager::spawn)))
                         .then(Commands.literal("useitem")
@@ -63,6 +69,9 @@ public final class BotManager {
                                         .then(Commands.argument("enabled", BoolArgumentType.bool())
                                                 .executes(context -> setMultiWeapon(context))))
                                 .then(Commands.literal("spawn")
+                                        .then(Commands.argument("name", StringArgumentType.word())
+                                                .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
+                                                        .executes(BotManager::spawnPvp)))
                                         .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
                                                 .executes(BotManager::spawnPvp))))
                         .then(Commands.literal("ai")
@@ -186,6 +195,12 @@ public final class BotManager {
     private static int spawn(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         int count = IntegerArgumentType.getInteger(context, "count");
+        String firstName = null;
+        try {
+            firstName = StringArgumentType.getString(context, "name");
+        } catch (Exception ignored) {
+            // name argument is optional
+        }
         if (ModConfig.instance.rankSystemEnabled) {
             int rankMax = RankManager.getMaxBots(player.getUUID());
             if (rankMax == 0) {
@@ -205,7 +220,7 @@ public final class BotManager {
         Vec3 pos = player.position();
         ResourceKey<Level> dimension = player.getLevel().dimension();
         List<String> spawned = spawnBots(context.getSource().getServer(), count, pos, dimension,
-                player.yRot, player.xRot, false, player.getUUID());
+                player.yRot, player.xRot, false, player.getUUID(), firstName);
         if (spawned.isEmpty()) {
             context.getSource().sendFailure(new TextComponent("Could not spawn any bots"));
             return 0;
@@ -218,6 +233,12 @@ public final class BotManager {
     private static int spawnPvp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
         int count = IntegerArgumentType.getInteger(context, "count");
+        String firstName = null;
+        try {
+            firstName = StringArgumentType.getString(context, "name");
+        } catch (Exception ignored) {
+            // name argument is optional
+        }
         if (ModConfig.instance.rankSystemEnabled) {
             int rankMax = RankManager.getMaxBots(player.getUUID());
             if (rankMax == 0) {
@@ -237,7 +258,7 @@ public final class BotManager {
         Vec3 pos = player.position();
         ResourceKey<Level> dimension = player.getLevel().dimension();
         List<String> spawned = spawnBots(context.getSource().getServer(), count, pos, dimension,
-                player.yRot, player.xRot, true, player.getUUID());
+                player.yRot, player.xRot, true, player.getUUID(), firstName);
         if (spawned.isEmpty()) {
             context.getSource().sendFailure(new TextComponent("Could not spawn any PvP bots"));
             return 0;
@@ -249,10 +270,25 @@ public final class BotManager {
 
     private static List<String> spawnBots(MinecraftServer server, int count, Vec3 pos,
                                           ResourceKey<Level> dimension, float yaw, float pitch, boolean pvp,
-                                          UUID ownerUuid) {
+                                          UUID ownerUuid, String firstName) {
         List<String> spawned = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            String name = nextName(server);
+            String name;
+            if (i == 0 && firstName != null && !firstName.isEmpty()) {
+                // First bot uses the user-specified name
+                name = firstName;
+                // Handle name collision
+                if (isNameTaken(server, name)) {
+                    int suffix = 2;
+                    while (isNameTaken(server, name + suffix)) {
+                        suffix++;
+                    }
+                    name = name + suffix;
+                }
+            } else {
+                // Subsequent bots cycle through defaults: player name, Alex, Steve, etc.
+                name = nextName(server);
+            }
             EntityPlayerMPFake fake = EntityPlayerMPFake.createFake(name, server, pos.x, pos.y, pos.z,
                     yaw, pitch, dimension, GameType.SURVIVAL, false);
             if (fake == null) {
@@ -496,10 +532,19 @@ public final class BotManager {
     }
 
     private static String nextName(MinecraftServer server) {
+        // Cycle through default names, then fall back to numbered names
+        if (nameCounter < DEFAULT_NAMES.length) {
+            String name = DEFAULT_NAMES[nameCounter];
+            if (!isNameTaken(server, name)) {
+                nameCounter++;
+                return name;
+            }
+        }
+        // Fallback: numbered names
         String name;
         do {
             nameCounter++;
-            name = "FriendBot_" + nameCounter;
+            name = "Bot_" + nameCounter;
         } while (isNameTaken(server, name));
         return name;
     }

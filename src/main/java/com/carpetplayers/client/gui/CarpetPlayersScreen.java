@@ -29,65 +29,74 @@ public class CarpetPlayersScreen extends Screen {
     @Override
     protected void init() {
         int centerX = this.width / 2;
-        int y = 30;
+        int y = 36;
 
-        // Title
-        // Row 1: Action buttons
-        this.addButton(new Button(centerX - 200, y, 95, 20, new TextComponent("Spawn Bot"), button -> {
+        // Row 1: Spawn buttons (centered, paired)
+        int spawnRowWidth = 200;
+        this.addButton(new Button(centerX - spawnRowWidth / 2, y, 95, 20, new TextComponent("Spawn Bot"), button -> {
             sendAction("spawn");
         }));
-        this.addButton(new Button(centerX - 100, y, 95, 20, new TextComponent("Spawn PvP"), button -> {
+        this.addButton(new Button(centerX - spawnRowWidth / 2 + 100, y, 95, 20, new TextComponent("Spawn PvP"), button -> {
             sendAction("spawn_pvp");
         }));
-        this.addButton(new Button(centerX + 5, y, 95, 20, new TextComponent("Remove Selected"), button -> {
+
+        y += 24;
+        // Row 2: Bot actions (centered, 4 buttons)
+        int actionRowWidth = 390;
+        int actionStart = centerX - actionRowWidth / 2;
+        this.addButton(new Button(actionStart, y, 90, 20, new TextComponent("Remove"), button -> {
             if (selectedBotIndex >= 0 && selectedBotIndex < botEntries.size()) {
                 sendActionWith("remove", botEntries.get(selectedBotIndex)[0]);
             }
         }));
-        this.addButton(new Button(centerX + 105, y, 95, 20, new TextComponent("Request List"), button -> {
-            CarpetPlayersClient.requestBots();
-        }));
-
-        y += 25;
-        // Row 2: Kit
-        this.addButton(new Button(centerX - 200, y, 130, 20, new TextComponent("Kit: " + KITS[kitIndex]), button -> {
-            kitIndex = (kitIndex + 1) % KITS.length;
-            button.setMessage(new TextComponent("Kit: " + KITS[kitIndex]));
-        }));
-        this.addButton(new Button(centerX - 60, y, 90, 20, new TextComponent("Apply Kit"), button -> {
-            if (selectedBotIndex >= 0 && selectedBotIndex < botEntries.size()) {
-                sendKitAction(botEntries.get(selectedBotIndex)[0], KITS[kitIndex]);
-            }
-        }));
-        this.addButton(new Button(centerX + 40, y, 90, 20, new TextComponent("Control"), button -> {
+        this.addButton(new Button(actionStart + 95, y, 90, 20, new TextComponent("Control"), button -> {
             if (selectedBotIndex >= 0 && selectedBotIndex < botEntries.size()) {
                 sendActionWith("control", botEntries.get(selectedBotIndex)[0]);
             }
         }));
-        this.addButton(new Button(centerX + 140, y, 90, 20, new TextComponent("Release"), button -> {
+        this.addButton(new Button(actionStart + 190, y, 90, 20, new TextComponent("Release"), button -> {
             sendAction("release");
         }));
+        this.addButton(new Button(actionStart + 285, y, 100, 20, new TextComponent("Request List"), button -> {
+            CarpetPlayersClient.requestBots();
+        }));
 
-        y += 25;
-        // Row 3: Settings toggles
-        this.addButton(new Button(centerX - 200, y, 95, 20, new TextComponent("Use Item: " + (useItemEnabled ? "ON" : "OFF")), button -> {
+        y += 24;
+        // Row 3: Kit selector (centered)
+        int kitRowWidth = 300;
+        int kitStart = centerX - kitRowWidth / 2;
+        this.addButton(new Button(kitStart, y, 150, 20, new TextComponent("Kit: " + KITS[kitIndex]), button -> {
+            kitIndex = (kitIndex + 1) % KITS.length;
+            button.setMessage(new TextComponent("Kit: " + KITS[kitIndex]));
+        }));
+        this.addButton(new Button(kitStart + 155, y, 140, 20, new TextComponent("Apply Kit"), button -> {
+            if (selectedBotIndex >= 0 && selectedBotIndex < botEntries.size()) {
+                sendKitAction(botEntries.get(selectedBotIndex)[0], KITS[kitIndex]);
+            }
+        }));
+
+        y += 24;
+        // Row 4: Settings toggles (centered)
+        int toggleRowWidth = 395;
+        int toggleStart = centerX - toggleRowWidth / 2;
+        this.addButton(new Button(toggleStart, y, 125, 20, new TextComponent("Use Item: " + (useItemEnabled ? "ON" : "OFF")), button -> {
             useItemEnabled = !useItemEnabled;
             button.setMessage(new TextComponent("Use Item: " + (useItemEnabled ? "ON" : "OFF")));
             sendToggle("toggle_useitem", useItemEnabled);
         }));
-        this.addButton(new Button(centerX - 100, y, 95, 20, new TextComponent("Interactive: " + (interactiveEnabled ? "ON" : "OFF")), button -> {
+        this.addButton(new Button(toggleStart + 130, y, 130, 20, new TextComponent("Interactive: " + (interactiveEnabled ? "ON" : "OFF")), button -> {
             interactiveEnabled = !interactiveEnabled;
             button.setMessage(new TextComponent("Interactive: " + (interactiveEnabled ? "ON" : "OFF")));
             sendToggle("toggle_interactive", interactiveEnabled);
         }));
-        this.addButton(new Button(centerX + 5, y, 100, 20, new TextComponent("Multi-Weapon: " + (multiWeaponEnabled ? "ON" : "OFF")), button -> {
+        this.addButton(new Button(toggleStart + 265, y, 125, 20, new TextComponent("Multi-Weapon: " + (multiWeaponEnabled ? "ON" : "OFF")), button -> {
             multiWeaponEnabled = !multiWeaponEnabled;
             button.setMessage(new TextComponent("Multi-Weapon: " + (multiWeaponEnabled ? "ON" : "OFF")));
             sendToggle("toggle_multiweapon", multiWeaponEnabled);
         }));
 
-        y += 30;
-        // Row 4: Done button
+        y += 24;
+        // Row 5: Done button
         this.addButton(new Button(centerX - 50, this.height - 30, 100, 20, new TextComponent("Done"), button -> {
             this.minecraft.setScreen(parent);
         }));
@@ -99,10 +108,10 @@ public class CarpetPlayersScreen extends Screen {
     @Override
     public void render(PoseStack matrices, int mouseX, int mouseY, float delta) {
         this.renderBackground(matrices);
-        drawCenteredString(matrices, this.font, "CARPET PLAYERS", this.width / 2, 12, 0xFFFFFF);
+        drawCenteredString(matrices, this.font, "\u00a76CARPET PLAYERS", this.width / 2, 16, 0xFFFFFF);
 
-        // Draw bot list area
-        int listY = 100;
+        // Draw bot list area — starts below button rows
+        int listY = 118;
         int listX = this.width / 2 - 200;
         int listWidth = 400;
         int entryHeight = 14;
@@ -130,15 +139,17 @@ public class CarpetPlayersScreen extends Screen {
                     }
                 }
 
-                String typeTag = pvp ? " [PvP]" : "";
-                String line = bot[0] + typeTag + "  HP:" + bot[1] + "  [" + bot[2] + "]";
+                String typeTag = pvp ? " \u00a7c[PvP]" : " \u00a7a[Normal]";
+                String line = bot[0] + typeTag + "  \u00a74HP:" + bot[1] + "  \u00a77[" + bot[2] + "]";
                 drawString(matrices, this.font, line, listX, ey, i == selectedBotIndex ? 0x55FFFF : 0xFFFFFF);
             }
         }
 
         // Draw settings summary at bottom of list area
         int settingsY = listY + Math.max(botEntries.size(), 1) * entryHeight + 10;
-        drawString(matrices, this.font, "Settings: UseItem=" + useItemEnabled + " Interactive=" + interactiveEnabled + " MultiWeapon=" + multiWeaponEnabled, listX, settingsY, 0x888888);
+        drawString(matrices, this.font,
+                "Settings: UseItem=" + useItemEnabled + " Interactive=" + interactiveEnabled + " MultiWeapon=" + multiWeaponEnabled,
+                listX, settingsY, 0x888888);
 
         super.render(matrices, mouseX, mouseY, delta);
     }
@@ -152,7 +163,7 @@ public class CarpetPlayersScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         boolean result = super.mouseClicked(mouseX, mouseY, button);
         if (button == 0) {
-            int listY = 100;
+            int listY = 118;
             int listX = this.width / 2 - 200;
             int listWidth = 400;
             for (int i = 0; i < botEntries.size(); i++) {

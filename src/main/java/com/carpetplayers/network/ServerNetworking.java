@@ -31,11 +31,16 @@ public final class ServerNetworking {
 
     public static void init() {
         // Client -> Server: bot control actions
+        // IMPORTANT: Copy buffer before server.execute() — Fabric releases it after callback returns
         ServerPlayNetworking.registerGlobalReceiver(ModPackets.BOT_ACTION,
                 (MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler,
                  FriendlyByteBuf buf, PacketSender responseSender) -> {
                     String action = buf.readUtf();
-                    server.execute(() -> handleBotAction(server, player, buf, action));
+                    FriendlyByteBuf copy = PacketByteBufs.create();
+                    if (buf.isReadable()) {
+                        copy.writeBytes(buf);
+                    }
+                    server.execute(() -> handleBotAction(server, player, copy, action));
                 });
 
         // Client -> Server: request the active bot list
@@ -197,11 +202,21 @@ public final class ServerNetworking {
                 player.getUUID());
     }
 
+    private static final String[] DEFAULT_NAMES = {"Alex", "Steve", "Herobrine", "Notch", "Dream"};
+
     private static String nextBotName(MinecraftServer server) {
+        if (nameCounter < DEFAULT_NAMES.length) {
+            String name = DEFAULT_NAMES[nameCounter];
+            if (server.getPlayerList().getPlayerByName(name) == null
+                    && !BotManager.getBotNames().contains(name)) {
+                nameCounter++;
+                return name;
+            }
+        }
         String name;
         do {
             nameCounter++;
-            name = "FriendBot_" + nameCounter;
+            name = "Bot_" + nameCounter;
         } while (server.getPlayerList().getPlayerByName(name) != null
                 || BotManager.getBotNames().contains(name));
         return name;

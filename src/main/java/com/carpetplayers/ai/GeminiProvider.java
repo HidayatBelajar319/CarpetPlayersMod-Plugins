@@ -1,5 +1,6 @@
 package com.carpetplayers.ai;
 
+import com.carpetplayers.CarpetPlayersMod;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -271,6 +272,50 @@ public class GeminiProvider extends AbstractAIProvider {
         } catch (AIException e) {
             lastError = e.getMessage();
             return false;
+        }
+    }
+
+    /**
+     * Queries v1beta/models endpoint to discover available Gemini models.
+     */
+    @Override
+    public List<String> fetchModels() {
+        try {
+            String base = getBaseUrl();
+            if (base == null || base.isEmpty()) {
+                base = "https://generativelanguage.googleapis.com";
+            }
+            while (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+            String modelsUrl = base + "/v1beta/models?key=" + getApiKey();
+            HttpResult result = getJson(modelsUrl, new HashMap<>());
+            if (result.code < 200 || result.code >= 300) {
+                CarpetPlayersMod.LOGGER.warn("Failed to fetch models from {}: HTTP {}", modelsUrl, result.code);
+                return new ArrayList<>();
+            }
+            JsonObject root = new JsonParser().parse(result.body).getAsJsonObject();
+            JsonArray modelsArray = root.has("models") ? root.getAsJsonArray("models") : null;
+            if (modelsArray == null) {
+                return new ArrayList<>();
+            }
+            List<String> models = new ArrayList<>();
+            for (JsonElement el : modelsArray) {
+                JsonObject obj = el.getAsJsonObject();
+                if (obj.has("name")) {
+                    // Gemini returns "models/gemini-2.0-flash" — strip prefix
+                    String name = obj.get("name").getAsString();
+                    if (name.startsWith("models/")) {
+                        name = name.substring("models/".length());
+                    }
+                    models.add(name);
+                }
+            }
+            CarpetPlayersMod.LOGGER.info("Discovered {} Gemini model(s)", models.size());
+            return models;
+        } catch (Exception e) {
+            CarpetPlayersMod.LOGGER.warn("Failed to fetch Gemini models: {}", e.getMessage());
+            return new ArrayList<>();
         }
     }
 }
