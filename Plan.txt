@@ -226,3 +226,14 @@ Player edit file di disk → Player jalanin /reload
 ---
 
 **STATUS: Ready for implementation! 🚀**
+
+
+Fitur Tambahan wak:
+Fitur BYOK(Bring Your Own Key) tapi BaseURL nya bisa di edit lewat configurasi File(atau lewat command)
+Provider Router Baru:OrcaRouter
+BaseURL:https://api.orcarouter.ai/v1/
+Model:orcarouter/auto
+ini model otomatis pilih modelnya sendiri jadi aman gak usah edit sendiri.
+dan dia Router nya bukan Local yak.
+
+dan ganti semua model OpenRouter menjadi hanya 1 yaitu model ID ini "openrouter/auto".

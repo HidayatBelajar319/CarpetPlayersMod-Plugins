@@ -149,6 +149,12 @@ public final class AIProviderManager {
                 provider.models.add("llama-3.1-8b-instant");
                 provider.models.add("llama-3.3-70b-versatile");
                 return provider;
+            case "orcarouter":
+                provider.name = "OrcaRouter";
+                provider.baseUrl = "https://api.orcarouter.ai/v1";
+                provider.model = "orcarouter/auto";
+                provider.models.add("orcarouter/auto");
+                return provider;
             case "local":
                 provider.name = "Local (Ollama)";
                 provider.baseUrl = "http://localhost:11434/v1";
@@ -240,7 +246,7 @@ public final class AIProviderManager {
         ProviderConfig provider = defaultProvider(normalizedType);
         if (provider == null) {
             return "Unknown provider type: " + type
-                    + " (options: openai, gemini, openrouter, groq, local).";
+                    + " (options: openai, gemini, openrouter, groq, local, orcarouter).";
         }
         provider.apiKey = apiKey != null ? apiKey : "";
         config.providers.add(provider);
@@ -317,6 +323,11 @@ public final class AIProviderManager {
                          "google/gemma-2-9b-it:free",
                          "mistralai/mistral-7b-instruct:free",
                          "meta-llama/llama-3.3-70b-instruct:free"},
+                };
+                break;
+            case "orcarouter":
+                preferred = new String[][]{
+                        {"orcarouter/auto"}
                 };
                 break;
             default:

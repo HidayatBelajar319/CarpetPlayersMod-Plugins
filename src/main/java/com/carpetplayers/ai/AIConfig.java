@@ -20,5 +20,6 @@ public class AIConfig {
     public int requestTimeoutMs = 30000;
     public int failureCooldownMs = 30000;
     public boolean debugLogging = false;
+    public boolean offlineMode = false;  // Mode offline saat AI provider down
     public List<ProviderConfig> providers = new ArrayList<>();
 }

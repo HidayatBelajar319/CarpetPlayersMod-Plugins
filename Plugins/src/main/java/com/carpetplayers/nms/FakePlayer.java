@@ -35,6 +35,7 @@ public class FakePlayer extends EntityPlayer {
     private float inputForward;
     private float inputStrafe;
     private boolean inputJump;
+    private boolean inputSprint;
 
     public FakePlayer(MinecraftServer server, WorldServer world, GameProfile profile,
                       PlayerInteractManager interactManager) {
@@ -95,6 +96,14 @@ public class FakePlayer extends EntityPlayer {
         this.inputJump = jumping;
     }
 
+    public void setSprinting(boolean sprinting) {
+        this.inputSprint = sprinting;
+    }
+
+    public boolean isSprinting() {
+        return inputSprint;
+    }
+
     public void moveLocation(double x, double y, double z, float yaw, float pitch) {
         this.setLocation(x, y, z, yaw, pitch);
     }
@@ -121,7 +130,7 @@ public class FakePlayer extends EntityPlayer {
         double fz = Math.cos(rad) * forward;
         double sx = Math.cos(rad) * strafe;
         double sz = Math.sin(rad) * strafe;
-        double speed = 0.22D;
+        double speed = inputSprint ? 0.28D : 0.22D;
         Vec3D mot = getMot();
         setMot((fx + sx) * speed, mot.y, (fz + sz) * speed);
         if (inputJump && onGround) {

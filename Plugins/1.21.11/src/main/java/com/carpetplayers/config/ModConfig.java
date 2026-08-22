@@ -26,6 +26,9 @@ public class ModConfig {
     public int maxBots = 50;
     public int wanderRadius = 16;
     public int pvpTargetRadius = 16;
+    public String pvpMovementMode = "balanced";  // "aggressive", "defensive", "balanced"
+    public boolean pvpStrafeEnabled = true;
+    public boolean pvpSprintResetEnabled = true;
     public int baseTargetRadius = 8;
     public boolean debugLogging = true;
     public boolean rankSystemEnabled = false;

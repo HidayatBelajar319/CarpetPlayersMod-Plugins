@@ -31,6 +31,7 @@ public class FakePlayer extends ServerPlayer {
     private float inputForward;
     private float inputStrafe;
     private boolean inputJump;
+    private boolean inputSprint;
 
     public FakePlayer(MinecraftServer server, ServerLevel world, GameProfile profile) {
         super(server, world, profile, ClientInformation.createDefault());
@@ -78,6 +79,14 @@ public class FakePlayer extends ServerPlayer {
         this.inputJump = jumping;
     }
 
+    public void setSprinting(boolean sprinting) {
+        this.inputSprint = sprinting;
+    }
+
+    public boolean isSprinting() {
+        return inputSprint;
+    }
+
     public void moveLocation(double x, double y, double z, float yaw, float pitch) {
         // Entity.moveTo(double,double,double,float,float) does NOT exist in 1.21.11
         // (removed/renamed). Safe fallback: setPos + setYRot + setXRot + setYHeadRot.
@@ -108,7 +117,7 @@ public class FakePlayer extends ServerPlayer {
         double fz = Math.cos(rad) * forward;
         double sx = Math.cos(rad) * strafe;
         double sz = Math.sin(rad) * strafe;
-        double speed = 0.22D;
+        double speed = inputSprint ? 0.28D : 0.22D;
         Vec3 mot = getDeltaMovement();
         setDeltaMovement((fx + sx) * speed, mot.y, (fz + sz) * speed);
         if (inputJump && onGround()) {

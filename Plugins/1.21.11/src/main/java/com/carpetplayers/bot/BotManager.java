@@ -174,7 +174,7 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
 
     private boolean cmdPvp(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§fCarpet PvP: w-tap/a-tap/s-tap/d-tap/multipleweapons/spawn <count>");
+            sender.sendMessage("§fCarpet PvP: w-tap/a-tap/s-tap/d-tap/multipleweapons/spawn/movement/strafe/sprint-reset");
             return true;
         }
         switch (args[1].toLowerCase()) {
@@ -217,6 +217,48 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
                 ModConfig.instance.multiWeaponEnabled = enabled;
                 ModConfig.save();
                 sender.sendMessage("§aBot multi-weapon system set to " + enabled);
+                return true;
+            }
+            case "movement": {
+                if (args.length < 4) {
+                    sender.sendMessage("§cUsage: /carpetplayers pvp movement <botname> <aggressive|defensive|balanced>");
+                    return true;
+                }
+                FakePlayer bot = findBotByName(args[2]);
+                if (bot == null) {
+                    sender.sendMessage("§cBot '" + args[2] + "' not found");
+                    return true;
+                }
+                String mode = args[3].toLowerCase();
+                if (!mode.equals("aggressive") && !mode.equals("defensive") && !mode.equals("balanced")) {
+                    sender.sendMessage("§cMode must be: aggressive, defensive, or balanced");
+                    return true;
+                }
+                ModConfig.instance.pvpMovementMode = mode;
+                ModConfig.save();
+                sender.sendMessage("§aPvP movement for " + args[2] + " set to " + mode);
+                return true;
+            }
+            case "strafe": {
+                if (args.length < 3) {
+                    sender.sendMessage("§cUsage: /carpetplayers pvp strafe <true|false>");
+                    return true;
+                }
+                boolean enabled = Boolean.parseBoolean(args[2]);
+                ModConfig.instance.pvpStrafeEnabled = enabled;
+                ModConfig.save();
+                sender.sendMessage("§aPvP strafe set to " + enabled);
+                return true;
+            }
+            case "sprint-reset": {
+                if (args.length < 3) {
+                    sender.sendMessage("§cUsage: /carpetplayers pvp sprint-reset <true|false>");
+                    return true;
+                }
+                boolean enabled = Boolean.parseBoolean(args[2]);
+                ModConfig.instance.pvpSprintResetEnabled = enabled;
+                ModConfig.save();
+                sender.sendMessage("§aPvP sprint-reset set to " + enabled);
                 return true;
             }
             case "w-tap":
@@ -275,6 +317,17 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             case "status":
                 AICommands.handleStatus(sender);
                 return true;
+            case "offline": {
+                if (args.length < 3) {
+                    sender.sendMessage("§cUsage: /carpetplayers ai offline <true|false>");
+                    return true;
+                }
+                boolean enabled = Boolean.parseBoolean(args[2]);
+                ModConfig.instance.aiConfig.offlineMode = enabled;
+                ModConfig.save();
+                sender.sendMessage("§aAI offline mode set to " + enabled);
+                return true;
+            }
             case "reload":
                 AICommands.handleReload(sender);
                 return true;
@@ -609,10 +662,11 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
         } else if (args.length == 2) {
             switch (args[0].toLowerCase()) {
                 case "pvp":
-                    suggestions.addAll(Arrays.asList("spawn", "w-tap", "a-tap", "s-tap", "d-tap", "multipleweapons"));
+                    suggestions.addAll(Arrays.asList("spawn", "w-tap", "a-tap", "s-tap", "d-tap", "multipleweapons",
+                            "movement", "strafe", "sprint-reset"));
                     break;
                 case "ai":
-                    suggestions.addAll(Arrays.asList("start", "stop", "status", "reload", "test", "act", "chat",
+                    suggestions.addAll(Arrays.asList("start", "stop", "status", "offline", "reload", "test", "act", "chat",
                             "forget", "defensive", "provider"));
                     break;
                 case "control":
@@ -627,6 +681,12 @@ public final class BotManager implements CommandExecutor, TabCompleter, Listener
             if ("kit".equalsIgnoreCase(args[0])) {
                 suggestions.addAll(Arrays.asList("netherite_crystal", "diamond_crystal", "netherite_pot",
                         "diamond_pot", "netherite_basic", "diamond_basic"));
+            } else if ("pvp".equalsIgnoreCase(args[0]) && "movement".equalsIgnoreCase(args[1])) {
+                suggestions.addAll(getBotNames());
+            }
+        } else if (args.length == 4) {
+            if ("pvp".equalsIgnoreCase(args[0]) && "movement".equalsIgnoreCase(args[1])) {
+                suggestions.addAll(Arrays.asList("aggressive", "defensive", "balanced"));
             }
         }
         return suggestions;

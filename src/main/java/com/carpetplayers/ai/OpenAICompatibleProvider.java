@@ -27,6 +27,8 @@ public class OpenAICompatibleProvider extends AbstractAIProvider {
                 base = "https://openrouter.ai/api/v1";
             } else if ("groq".equalsIgnoreCase(getType())) {
                 base = "https://api.groq.com/openai/v1";
+            } else if ("orcarouter".equalsIgnoreCase(getType())) {
+                base = "https://api.orcarouter.ai/v1";
             } else {
                 base = "https://api.openai.com/v1";
             }

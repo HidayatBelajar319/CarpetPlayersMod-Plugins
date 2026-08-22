@@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -71,12 +72,28 @@ public final class BotManager {
                                         .then(Commands.argument("name", StringArgumentType.word())
                                                 .executes(BotManager::spawnPvp)
                                                 .then(Commands.argument("count", IntegerArgumentType.integer(1, 100))
-                                                        .executes(BotManager::spawnPvp)))))
+                                                        .executes(BotManager::spawnPvp))))
+                                .then(Commands.literal("movement")
+                                        .then(Commands.argument("botname", StringArgumentType.word())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(getBotNames(), b))
+                                                .then(Commands.argument("mode", StringArgumentType.word())
+                                                        .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.asList("aggressive", "defensive", "balanced"), b))
+                                                        .executes(BotManager::setPvpMovement))))
+                                .then(Commands.literal("strafe")
+                                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                                .executes(context -> setPvpBool(context, "strafe"))))
+                                .then(Commands.literal("sprint-reset")
+                                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                                .executes(context -> setPvpBool(context, "sprint-reset"))))
+                        )
                         .then(Commands.literal("ai")
                                 .then(Commands.literal("start").executes(AICommands::start))
                                 .then(Commands.literal("stop").executes(AICommands::stop))
                                 .then(Commands.literal("status").executes(AICommands::status))
-                                .then(Commands.literal("reload").executes(AICommands::reload))
+                                .then(Commands.literal("offline")
+                                        .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                                .executes(context -> setAiOffline(context)))))
                                 .then(Commands.literal("test").executes(AICommands::test))
                                 .then(Commands.literal("act")
                                         .then(Commands.argument("botname", StringArgumentType.word())
@@ -337,6 +354,50 @@ public final class BotManager {
         ModConfig.save();
         context.getSource().sendSuccess(new TextComponent(
                 "Tap-hit control " + tapName + " set to " + enabled), true);
+        return 1;
+    }
+
+    private static int setPvpMovement(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String name = StringArgumentType.getString(context, "botname");
+        EntityPlayerMPFake bot = findBotByName(name);
+        if (bot == null) {
+            context.getSource().sendFailure(new TextComponent("Bot '" + name + "' not found"));
+            return 0;
+        }
+        String mode = StringArgumentType.getString(context, "mode").toLowerCase(Locale.ROOT);
+        if (!"aggressive".equals(mode) && !"defensive".equals(mode) && !"balanced".equals(mode)) {
+            context.getSource().sendFailure(new TextComponent("Mode must be: aggressive, defensive, or balanced"));
+            return 0;
+        }
+        ModConfig.instance.pvpMovementMode = mode;
+        ModConfig.save();
+        context.getSource().sendSuccess(new TextComponent(
+                "PvP movement for " + name + " set to " + mode), true);
+        return 1;
+    }
+
+    private static int setPvpBool(CommandContext<CommandSourceStack> context, String type) {
+        boolean enabled = BoolArgumentType.getBool(context, "enabled");
+        switch (type) {
+            case "strafe":
+                ModConfig.instance.pvpStrafeEnabled = enabled;
+                break;
+            case "sprint-reset":
+                ModConfig.instance.pvpSprintResetEnabled = enabled;
+                break;
+        }
+        ModConfig.save();
+        context.getSource().sendSuccess(new TextComponent(
+                "PvP " + type + " set to " + enabled), true);
+        return 1;
+    }
+
+    private static int setAiOffline(CommandContext<CommandSourceStack> context) {
+        boolean enabled = BoolArgumentType.getBool(context, "enabled");
+        ModConfig.instance.aiConfig.offlineMode = enabled;
+        ModConfig.save();
+        context.getSource().sendSuccess(new TextComponent(
+                "AI offline mode " + (enabled ? "enabled" : "disabled")), true);
         return 1;
     }
 
