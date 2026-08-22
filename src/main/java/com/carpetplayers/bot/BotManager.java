@@ -39,6 +39,7 @@ public final class BotManager {
 
     private static int nameCounter = 0;
     private static long autoSaveCounter = 0;
+    public static BotManager botManagerInstance;
 
     /** Default bot name pool for cycling when spawning multiple bots */
     private static final String[] DEFAULT_NAMES = {"Alex", "Steve", "Herobrine", "Notch", "Dream"};
@@ -93,7 +94,10 @@ public final class BotManager {
                                 .then(Commands.literal("status").executes(AICommands::status))
                                 .then(Commands.literal("offline")
                                         .then(Commands.argument("enabled", BoolArgumentType.bool())
-                                                .executes(context -> setAiOffline(context)))))
+                                                .executes(context -> setAiOffline(context))))
+                                .then(Commands.literal("config")
+                                        .then(Commands.argument("filename", StringArgumentType.word())
+                                                .executes(context -> setConfigFile(context)))))
                                 .then(Commands.literal("test").executes(AICommands::test))
                                 .then(Commands.literal("act")
                                         .then(Commands.argument("botname", StringArgumentType.word())
@@ -188,6 +192,10 @@ public final class BotManager {
                                     com.carpetplayers.rank.RankManager.init();
                                     com.carpetplayers.bot.BotPersistence.loadBots(server);
                                     com.carpetplayers.waypoint.WaypointManager.loadAll();
+
+                                    // Sync additional modified files
+                                    syncModifiedFiles(server, ctx.getSource());
+
                                     ctx.getSource().sendSuccess(
                                             new TextComponent("[CarpetPlayers] Configs reloaded!"), false);
                                     return 1;
@@ -303,7 +311,47 @@ public final class BotManager {
                 int suffix = (count > 1) ? (i + 2) : 2;
                 while (isNameTaken(server, name + suffix)) {
                     suffix++;
+private static int rankDefault(CommandContext<CommandSourceStack> context) {
+        String rankName = StringArgumentType.getString(context, "rank");
+        Rank rank = Rank.fromName(rankName);
+        RankManager.setDefaultRank(rank);
+        context.getSource().sendSuccess(new TextComponent("Default rank set to " + rank.getName()), true);
+        return 1;
+    }
+
+    private static void syncModifiedFiles(MinecraftServer server, com.mojang.brigadier.context.CommandSource source) {
+        // Files to watch and reload
+        File[] configFiles = new File[]{
+                new File(server.getWorldDirectory(), "carpetplayers-config.json"),
+                new File(server.getWorldDirectory(), "minecraft-ai/providers.json"),
+                new File(server.getWorldDirectory(), "carpetplayers-ranks.json")
+        };
+
+        for (File configFile : configFiles) {
+            if (configFile.exists()) {
+                try {
+                    // Simple hash-based change detection
+                    String content = new String(java.nio.file.Files.readAllBytes(configFile.toPath()));
+                    // In a full implementation, we would compare hash with stored hash
+                    // For now, just reload the config
+                    if (configFile.getName().endsWith("-config.json")) {
+                        com.carpetplayers.config.ModConfig.ensureLoaded();
+                    } else if (configFile.getName().endsWith("providers.json")) {
+                        com.carpetplayers.ai.AIProviderManager.instance().reload();
+                    } else if (configFile.getName().endsWith("ranks.json")) {
+                        com.carpetplayers.rank.RankManager.init();
+                    }
+                } catch (Exception e) {
+                    CarpetPlayersMod.LOGGER.error("Failed to sync config file: " + configFile.getName(), e);
                 }
+            }
+        }
+
+        // Sync waypoints
+        com.carpetplayers.waypoint.WaypointManager.loadAll();
+    }
+
+}
                 botName = name + suffix;
             }
             EntityPlayerMPFake fake = EntityPlayerMPFake.createFake(botName, server, pos.x, pos.y, pos.z,
@@ -398,6 +446,22 @@ public final class BotManager {
         ModConfig.save();
         context.getSource().sendSuccess(new TextComponent(
                 "AI offline mode " + (enabled ? "enabled" : "disabled")), true);
+        return 1;
+    }
+
+    public static void openConfigEditor(String filename) {
+        botManagerInstance = botManagerInstance != null ? botManagerInstance : new BotManager();
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen == null) {
+            minecraft.setScreen(new CodeEditorScreen(filename));
+        }
+    }
+
+    private static int setConfigFile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String filename = StringArgumentType.getString(context, "filename");
+        BotManager.botManagerInstance.openConfigEditor(filename);
+        context.getSource().sendSuccess(new TextComponent(
+                "Config editor opened for: " + filename), true);
         return 1;
     }
 
