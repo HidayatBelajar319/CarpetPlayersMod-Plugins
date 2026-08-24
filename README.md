@@ -80,12 +80,31 @@ Other providers: OpenAI, Gemini, OpenRouter, or local Ollama (no API key needed)
 
 ---
 
+## Quick Start (Fabric Mod)
+
+1. Install Minecraft 1.16.5 with Fabric Loader
+2. Install Carpet Mod (required dependency)
+3. Place the mod jar in `mods/` folder
+4. Launch the game — commands available with op level 2
+
+## Quick Start (Paper Plugin)
+
+1. Install Paper 1.16.5 or Paper 1.21.11 server
+2. Place the plugin jar in `plugins/` folder
+3. Restart server — commands available with `carpetplayers.admin` permission
+
+---
+
 ## Documentation
 
-- [Features](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/Features.md) — Full feature list
-- [Roadmap](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/RoadMap.md) — Development roadmap
-- [Changelog](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/CHANGE.md) — Version history
-- [Code Documentation](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/DocsCode.md) — Every file documented
+| Document | Description | Link |
+|---|---|---|
+| **Installation Guide** | Setup instructions for all platforms | [INSTALL.md](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/INSTALL.md) |
+| **Features** | Full feature list | [Docs/Features.md](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/Features.md) |
+| **Roadmap** | Development roadmap | [Docs/RoadMap.md](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/RoadMap.md) |
+| **Changelog** | Version history | [Docs/CHANGE.md](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/CHANGE.md) |
+| **Code Documentation** | Every file documented | [Docs/DocsCode.md](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Docs/DocsCode.md) |
+| **Plan** | Master development plan | [Plan.txt](https://github.com/HidayatBelajar319/CarpetPlayersMod-Plugins/blob/main/Plan.txt) |
 
 ---
 
