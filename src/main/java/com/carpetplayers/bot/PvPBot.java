@@ -204,7 +204,7 @@ public class PvPBot extends BotBrain {
                 jumpCooldown = 15 + random.nextInt(20);
             }
         }
-        if (jumpCooldown > 0 && bot.onGround()) {
+        if (jumpCooldown > 0 && bot.getDeltaMovement().y == 0.0D) {
             bot.setJumping(false);
         }
 

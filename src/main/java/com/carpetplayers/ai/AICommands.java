@@ -1,5 +1,6 @@
 package com.carpetplayers.ai;
 
+import com.carpetplayers.config.ModConfig;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -45,6 +46,8 @@ public final class AICommands {
         AIProviderManager manager = manager(context);
         StringBuilder sb = new StringBuilder();
         sb.append("[AI] Status: ").append(manager.isEnabled() ? "ENABLED" : "DISABLED").append("\n");
+        // Show offline mode status
+        sb.append("[AI] Mode: ").append(ModConfig.instance.aiConfig.offlineMode ? "OFFLINE" : "ONLINE").append("\n");
         for (AIProvider provider : manager.getProviders()) {
             ProviderHealth health = provider.getHealth();
             sb.append("  - ").append(provider.getName())

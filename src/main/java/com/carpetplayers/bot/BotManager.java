@@ -13,6 +13,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -24,6 +25,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -95,9 +97,6 @@ public final class BotManager {
                                 .then(Commands.literal("offline")
                                         .then(Commands.argument("enabled", BoolArgumentType.bool())
                                                 .executes(context -> setAiOffline(context))))
-                                .then(Commands.literal("config")
-                                        .then(Commands.argument("filename", StringArgumentType.word())
-                                                .executes(context -> setConfigFile(context)))))
                                 .then(Commands.literal("test").executes(AICommands::test))
                                 .then(Commands.literal("act")
                                         .then(Commands.argument("botname", StringArgumentType.word())
@@ -117,7 +116,17 @@ public final class BotManager {
                                         .then(providerBranch("gemini"))
                                         .then(providerBranch("openrouter"))
                                         .then(providerBranch("groq"))
+                                        .then(providerBranch("orcarouter"))
                                         .then(providerBranch("local")))
+                        )
+                        .then(Commands.literal("config")
+                                .then(Commands.literal("file")
+                                        .then(Commands.argument("filename", StringArgumentType.word())
+                                                .suggests((ctx, b) -> SharedSuggestionProvider.suggest(
+                                                        Arrays.asList("carpetplayers-config.json",
+                                                                "minecraft-ai/providers.json",
+                                                                "carpetplayers-ranks.json"), b))
+                                                .executes(context -> setConfigFile(context))))
                         )
                         .then(Commands.literal("menu")
                                 .executes(BotManager::openMenu))
@@ -311,47 +320,7 @@ public final class BotManager {
                 int suffix = (count > 1) ? (i + 2) : 2;
                 while (isNameTaken(server, name + suffix)) {
                     suffix++;
-private static int rankDefault(CommandContext<CommandSourceStack> context) {
-        String rankName = StringArgumentType.getString(context, "rank");
-        Rank rank = Rank.fromName(rankName);
-        RankManager.setDefaultRank(rank);
-        context.getSource().sendSuccess(new TextComponent("Default rank set to " + rank.getName()), true);
-        return 1;
-    }
-
-    private static void syncModifiedFiles(MinecraftServer server, com.mojang.brigadier.context.CommandSource source) {
-        // Files to watch and reload
-        File[] configFiles = new File[]{
-                new File(server.getWorldDirectory(), "carpetplayers-config.json"),
-                new File(server.getWorldDirectory(), "minecraft-ai/providers.json"),
-                new File(server.getWorldDirectory(), "carpetplayers-ranks.json")
-        };
-
-        for (File configFile : configFiles) {
-            if (configFile.exists()) {
-                try {
-                    // Simple hash-based change detection
-                    String content = new String(java.nio.file.Files.readAllBytes(configFile.toPath()));
-                    // In a full implementation, we would compare hash with stored hash
-                    // For now, just reload the config
-                    if (configFile.getName().endsWith("-config.json")) {
-                        com.carpetplayers.config.ModConfig.ensureLoaded();
-                    } else if (configFile.getName().endsWith("providers.json")) {
-                        com.carpetplayers.ai.AIProviderManager.instance().reload();
-                    } else if (configFile.getName().endsWith("ranks.json")) {
-                        com.carpetplayers.rank.RankManager.init();
-                    }
-                } catch (Exception e) {
-                    CarpetPlayersMod.LOGGER.error("Failed to sync config file: " + configFile.getName(), e);
                 }
-            }
-        }
-
-        // Sync waypoints
-        com.carpetplayers.waypoint.WaypointManager.loadAll();
-    }
-
-}
                 botName = name + suffix;
             }
             EntityPlayerMPFake fake = EntityPlayerMPFake.createFake(botName, server, pos.x, pos.y, pos.z,
@@ -370,6 +339,60 @@ private static int rankDefault(CommandContext<CommandSourceStack> context) {
             spawned.add(botName);
         }
         return spawned;
+    }
+
+    private static void syncModifiedFiles(MinecraftServer server, net.minecraft.commands.CommandSourceStack source) {
+        // Files to watch and reload
+        File configDir = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().toFile();
+        File[] configFiles = new File[]{
+                new File(configDir, "carpetplayers-config.json"),
+                new File(configDir, "minecraft-ai/providers.json"),
+                new File(configDir, "carpetplayers-ranks.json")
+        };
+
+        // Hash map for change detection (stored in memory)
+        java.util.Map<String, String> fileHashes = new java.util.HashMap<>();
+
+        for (File configFile : configFiles) {
+            if (configFile.exists()) {
+                try {
+                    // Hash-based change detection
+                    String content = new String(java.nio.file.Files.readAllBytes(configFile.toPath()));
+                    String hash = Integer.toHexString(content.hashCode());
+                    String oldHash = fileHashes.get(configFile.getAbsolutePath());
+
+                    if (oldHash == null || !oldHash.equals(hash)) {
+                        // File changed, reload it
+                        fileHashes.put(configFile.getAbsolutePath(), hash);
+                        if (configFile.getName().equals("carpetplayers-config.json")) {
+                            com.carpetplayers.config.ModConfig.ensureLoaded();
+                            source.sendSuccess(new TextComponent("§aReloaded: carpetplayers-config.json"), true);
+                        } else if (configFile.getName().equals("providers.json")) {
+                            com.carpetplayers.ai.AIProviderManager.instance().reload();
+                            source.sendSuccess(new TextComponent("§aReloaded: minecraft-ai/providers.json"), true);
+                        } else if (configFile.getName().equals("carpetplayers-ranks.json")) {
+                            com.carpetplayers.rank.RankManager.init();
+                            source.sendSuccess(new TextComponent("§aReloaded: carpetplayers-ranks.json"), true);
+                        }
+                    }
+                } catch (Exception e) {
+                    CarpetPlayersMod.LOGGER.error("Failed to sync config file: " + configFile.getName(), e);
+                }
+            }
+        }
+
+        // Sync waypoints
+        com.carpetplayers.waypoint.WaypointManager.loadAll();
+        source.sendSuccess(new TextComponent("§aSynced waypoints"), true);
+
+        // Reload datapacks
+        try {
+            server.reloadResources(java.util.Collections.emptyList());
+            source.sendSuccess(new TextComponent("§aReloaded world datapacks"), true);
+        } catch (Exception e) {
+            CarpetPlayersMod.LOGGER.error("Failed to reload datapacks", e);
+            source.sendSuccess(new TextComponent("§cFailed to reload datapacks: " + e.getMessage()), true);
+        }
     }
 
     private static int setUseItem(CommandContext<CommandSourceStack> context) {

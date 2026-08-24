@@ -4,6 +4,8 @@ import com.carpetplayers.bot.BotBrain;
 import com.carpetplayers.bot.BotManager;
 import com.carpetplayers.bot.KitManager;
 import com.google.gson.JsonObject;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -447,7 +449,7 @@ public final class MinecraftToolManager {
                     int z = args.get("z").getAsInt();
                     bot.navigateTo(new net.minecraft.core.BlockPos(x, y, z));
                     return "Navigating to (" + x + ", " + y + ", " + z + ")";
-                })),
+                }));
 
         // === Environment Awareness Tools ===
 
@@ -469,7 +471,7 @@ public final class MinecraftToolManager {
                                 BlockPos checkPos = pos.offset(dx, dy, dz);
                                 BlockState state = level.getBlockState(checkPos);
                                 if (filter.isEmpty() || state.getBlock().toString().contains(filter)) {
-                                    result.append("Block at ").append(checkPos).append(": ").append(state.getBlock().getRegistryName().getPath()).append("\n");
+                                    result.append("Block at ").append(checkPos).append(": ").append(net.minecraft.core.Registry.BLOCK.getKey(state.getBlock()).getPath()).append("\n");
                                     count++;
                                 }
                             }
@@ -477,7 +479,7 @@ public final class MinecraftToolManager {
                     }
                     if (count == 0) return "No blocks found in scan area";
                     return "Scan area (radius " + radius + "): found " + count + " block(s)" + (result.length() > 0 ? "\n" + result : "");
-                })),
+                }));
 
         tools.put("goto_block", new AITool("goto_block", "Navigate to the nearest block of specified type",
                 AITool.objectParams(
@@ -497,7 +499,7 @@ public final class MinecraftToolManager {
                             for (int dz = -radius; dz <= radius; dz++) {
                                 BlockPos checkPos = pos.offset(dx, dy, dz);
                                 BlockState state = level.getBlockState(checkPos);
-                                if (state.getBlock().toString().contains(block_type)) {
+                                if (state.getBlock().toString().contains(blockType)) {
                                     int dist = dx * dx + dy * dy + dz * dz;
                                     if (dist < bestDist) {
                                         bestDist = dist;
@@ -507,10 +509,10 @@ public final class MinecraftToolManager {
                             }
                         }
                     }
-                    if (target == null) return "No " + block_type + " found in radius " + radius;
+                    if (target == null) return "No " + blockType + " found in radius " + radius;
                     bot.navigateTo(target);
-                    return "Found " + block_type + " at " + target + ", navigating there";
-                })),
+                    return "Found " + blockType + " at " + target + ", navigating there";
+                }));
 
         tools.put("break_block", new AITool("break_block", "Break a block at specified position or nearest one",
                 AITool.objectParams(
@@ -545,9 +547,9 @@ public final class MinecraftToolManager {
                         }
                         if (targetPos == null) return "No breakable blocks nearby";
                     }
-                    bot.aiMineAt(targetPos.x, targetPos.y, targetPos.z);
+                    bot.aiMineAt(targetPos.getX(), targetPos.getY(), targetPos.getZ());
                     return "Breaking block at " + targetPos;
-                }),
+                }));
 
         // === WorldEdit Tools (operate on nearest player) ===
 

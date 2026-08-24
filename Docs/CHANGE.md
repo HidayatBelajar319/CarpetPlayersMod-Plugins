@@ -4,6 +4,64 @@ All notable changes to CarpetPlayers Mod/Plugin are documented here.
 
 ---
 
+## v1.4.0 — Phase 8: Enhanced Bot Behavior (Unreleased)
+
+### Added
+- **PvP Movement Fix (Phase 8.1):** Enhanced bot combat with natural movement
+  - Strafing: bots move left/right randomly during combat
+  - Sprint-reset: sprint to target → stop 2 ticks before attack → resume
+  - Jump combat: random jumps when enemy is 2-4 blocks away
+  - Gap management: retreat when health < 30%, aggro when enemy weak > 70%
+  - Side-step: avoids projectile attacks
+  - Commands:
+    - `/carpetplayers pvp movement <botname> <aggressive|defensive|balanced>`
+    - `/carpetplayers pvp strafe <true|false>`
+    - `/carpetplayers pvp sprint-reset <true|false>`
+- **Offline Mode (Phase 8.2):** Graceful fallback when AI provider unavailable
+  - `OfflineBehavior.java` — behavior tree: defend → eat → follow → wander
+  - Chat commands without AI: follow, stop, wander, chill, eat, goto
+  - `/carpetplayers ai offline <true|false>` — toggle offline mode
+  - `/carpetplayers ai status` — now shows "Mode: OFFLINE/ONLINE"
+- **Environment Awareness (Phase 8.3):** Bots can see and react to their surroundings
+  - `scan_area` — scan blocks in a radius
+  - `goto_block` — navigate to nearest block of a type
+  - `break_block` — destroy block at coordinates
+- **Config File Editor (Phase 8.4/8.5):** In-game JSON config editor (Fabric only)
+  - `/carpetplayers config file <filename>` — opens syntax-highlighted editor
+  - Tab completion for filenames: carpetplayers-config.json, minecraft-ai/providers.json, carpetplayers-ranks.json
+  - Syntax highlighting: keys (aqua), strings (green), numbers (gold), booleans (purple), null (gray), brackets (white)
+  - Buttons: Save (writes to disk), Cancel (close without saving), Reload (read from disk)
+  - Line numbers, cursor navigation, basic editing (insert/delete/backspace)
+- **Full Reload Sync (Phase 8.6):** Enhanced `/carpetplayers reload`
+  - Hash-based file change detection (only reloads modified files)
+  - Datapack reload integration
+  - Reports which files were reloaded
+- **BYOK + OrcaRouter Provider:** New AI provider option
+  - OrcaRouter: baseUrl `https://api.orcarouter.ai/v1`, model `orcarouter/auto`
+  - `/carpetplayers ai provider orcarouter <apikey>` — set OrcaRouter API key
+  - OpenRouter simplified to single model: `openrouter/auto` (was multi-model)
+- **Kit System:** Expanded from hardcoded kits to configurable system
+  - Commands: `/carpetplayers kitp <menu|kit1|kit2|kit3>`, `/carpetplayers kitb <menu|kit1|kit2|kit3>`
+  - Aliases: `/cps` and `/cp` shortcuts
+  - Double Chest GUI with configurable kit buttons
+  - `/carpetplayers kitp save <namakit/kit1/kit2/kit3>` — save current inventory as a kit
+  - Custom kit names: `/carpetplayers kitp "Crystal Kit"`
+
+### Changed
+- Config file editor moved from `/carpetplayers ai config` → `/carpetplayers config file` (matches Plan.txt spec)
+- OpenRouter provider now uses single model `openrouter/auto` instead of multiple models
+- `ai status` command now displays Mode: OFFLINE or ONLINE indicator
+- Reload command now uses hash comparison instead of unconditional reload
+
+### Fixed
+- CodeEditorScreen.java rewritten for Minecraft 1.16.5 Mojang mappings (`GuiGraphics` → `PoseStack`, `Formatting` → `ChatFormatting`, `Component` → `TextComponent`, etc.)
+- Vec3i private field access (`.x`/`.y`/`.z` → `.getX()`/`.getY()`/`.getZ()`) in MinecraftToolManager
+- `getRegistryName()` replaced with `Registry.BLOCK.getKey()` in MinecraftToolManager
+- `bot.onGround` protected access replaced with `bot.getDeltaMovement().y == 0.0D` in PvPBot
+- `CommandSource` import path fixed in BotManager
+
+---
+
 ## v1.3.0 — Waypoint System (Unreleased)
 
 ### Added

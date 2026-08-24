@@ -82,14 +82,19 @@ CarpetPlayers is a Minecraft mod/plugin project that brings fully autonomous, AI
 - [x] Error spam throttling (60s cooldown)
 - [x] PvP targeting fix, buffer crash fix, AI model auto-discovery
 
-## Phase 8: Enhanced Bot Behavior (PLANNED)
+## Phase 8: Enhanced Bot Behavior (COMPLETED)
 
-- [ ] PvP movement fix — improved strafing, sprinting, and gap management
-- [ ] Interactive bot offline mode — graceful fallback when AI provider unavailable
-- [ ] Bot environment awareness — bots see surrounding blocks, navigate and mine
-- [ ] In-game configuration editor — `/carpetplayers config file <name>` opens syntax-highlighted editor
-- [ ] Real-Sync for all mod files — `/reload` syncs all modified files/folders
-- [ ] Code editor with syntax highlighting and autocomplete in-game
+- [x] PvP movement fix — strafing, sprint-reset, jump combat, gap management, side-step
+- [x] PvP movement commands — `/carpetplayers pvp movement <bot> <mode>`, `strafe`, `sprint-reset`
+- [x] Interactive bot offline mode — OfflineBehavior.java behavior tree (fight → eat → follow → wander)
+- [x] Offline mode commands — `/carpetplayers ai offline <true|false>`, `/carpetplayers ai status` shows Mode: Offline/Online
+- [x] Bot environment awareness — scan_area, goto_block, break_block AI tools
+- [x] In-game configuration editor — `/carpetplayers config file <filename>` opens syntax-highlighted editor (Fabric)
+- [x] Code editor with syntax highlighting and autocomplete in-game (Fabric)
+- [x] Real-Sync for all mod files — `/carpetplayers reload` with hash comparison + datapack reload
+- [x] BYOK + OrcaRouter — OrcaRouter provider (baseUrl: https://api.orcarouter.ai/v1, model: orcarouter/auto)
+- [x] OpenRouter single model — changed from multi-model to `openrouter/auto`
+- [x] AI status indicator — shows Mode: OFFLINE/ONLINE in `/carpetplayers ai status`
 
 ## Phase 9: Polish & Community (PLANNED)
 

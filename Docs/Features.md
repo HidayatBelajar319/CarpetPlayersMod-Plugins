@@ -117,6 +117,8 @@ Also available as an AI tool: `equip_kit` — the AI can equip a kit onto a bot 
 
 ### 4.2 Provider Features
 
+- **OrcaRouter support** — Use `https://api.orcarouter.ai/v1` with `orcarouter/auto` model
+- **OpenRouter simplified** — Single model `openrouter/auto` instead of multiple models
 - **Priority-based failover** — providers are tried in configured priority order until one succeeds.
 - **Automatic cooldown on failure** — a failed provider is skipped for 30 seconds before retry.
 - **Health tracking per provider** — tracks success/failure history for each provider.
@@ -153,14 +155,16 @@ Also available as an AI tool: `equip_kit` — the AI can equip a kit onto a bot 
 |---|---|
 | `/carpetplayers ai start` | Enable AI |
 | `/carpetplayers ai stop` | Disable AI |
-| `/carpetplayers ai status` | Show provider health |
+| `/carpetplayers ai status` | Show provider health + Mode: OFFLINE/ONLINE |
+| `/carpetplayers ai offline <true|false>` | Toggle offline mode (fallback behavior when AI is down) |
 | `/carpetplayers ai reload` | Reload provider config |
 | `/carpetplayers ai test` | Test all providers |
 | `/carpetplayers ai act <bot> <instruction>` | AI-controlled action |
 | `/carpetplayers ai chat <bool>` | Toggle AI chat |
 | `/carpetplayers ai forget <bot>` | Clear conversation memory |
 | `/carpetplayers ai defensive <bool>` | Toggle defensive AI |
-| `/carpetplayers ai provider <type> <apikey>` | Set provider API key |
+| `/carpetplayers ai provider <openai\|gemini\|openrouter\|groq\|orcarouter\|local> <apikey>` | Set provider API key |
+| `/carpetplayers config file <filename>` | Open config editor (Fabric) |
 
 ### 4.5 Defensive AI
 

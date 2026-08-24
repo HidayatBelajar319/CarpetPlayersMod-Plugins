@@ -22,10 +22,12 @@ AI-powered Minecraft bot mod/plugin with PvP, command execution, WorldEdit tools
 - **W/A/S/D tap** — toggleable tap-hit mechanics for combat
 - **Multiple weapons** — multi-weapon PvP system
 - **6 PvP kits** — netherite_crystal, diamond_crystal, netherite_pot, diamond_pot, netherite_basic, diamond_basic
-
 ### AI Integration
-- **Multi-provider AI** — OpenAI, Gemini, OpenRouter, Groq, and local Ollama
-- **21 AI tools** — bots can execute commands, manipulate blocks, read files, and more
+
+- **Multi-provider AI** — OpenAI, Gemini, OpenRouter, Groq, OrcaRouter, and local Ollama
+- **OrcaRouter support** — Use `https://api.orcarouter.ai/v1` with `orcarouter/auto` model
+- **OpenRouter simplified** — Single model `openrouter/auto` for automatic model selection
+- **21+ AI tools** — bots can execute commands, manipulate blocks, read files, and more
 - **Groq recommended** — fastest, most interactive responses with lowest credit usage
 - **1-5 credits per action** — optimized AI call budget
 

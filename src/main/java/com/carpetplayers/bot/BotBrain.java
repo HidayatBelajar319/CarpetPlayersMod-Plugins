@@ -79,6 +79,9 @@ public class BotBrain {
 
     public String pendingReply;
 
+    // Offline behavior (when AI provider unavailable)
+    private OfflineBehavior offlineBehavior;
+
     private Vec3 controllerLastPos;
     private float controllerPrevAttackScale;
 
@@ -360,6 +363,20 @@ public class BotBrain {
     public void tick() {
         if (!bot.isAlive()) {
             return;
+        }
+        // Offline behavior when AI provider unavailable
+        if (ModConfig.instance.aiConfig.offlineMode) {
+            if (offlineBehavior == null) {
+                offlineBehavior = new OfflineBehavior(this);
+            }
+            offlineBehavior.tick();
+            // Still process basic survival (eat, potions) even in offline mode
+            if (ModConfig.instance.useItemEnabled) {
+                tryEat();
+                usePotionIfLow();
+                tryUseMilk();
+            }
+            return; // Skip normal AI/state logic when in offline mode
         }
         // Follow A* path if active
         if (tickPathfinding()) return;
@@ -786,6 +803,17 @@ public class BotBrain {
     protected void broadcastBot(String message) {
         PlayerList list = bot.getServer().getPlayerList();
         list.broadcastMessage(new TextComponent("<" + getBotName() + "> " + message), ChatType.CHAT, bot.getUUID());
+    }
+
+    /**
+     * Handle chat command from player when in offline mode.
+     * Returns true if command was handled.
+     */
+    public boolean handleOfflineChatCommand(String command, ServerPlayer sender) {
+        if (offlineBehavior != null) {
+            return offlineBehavior.handleChatCommand(command, sender);
+        }
+        return false;
     }
 
     protected void tickWander() {

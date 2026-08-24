@@ -53,7 +53,7 @@ public class PvPBot extends BotBrain {
         if (target == null || !target.isAlive()) {
             target = findTarget();
             if (target == null) {
-                setMovementInput(0.0F, 0.0F, false);
+                setMovementInput(0.0F, 0.0F);
                 bot.setSprinting(false);
                 return;
             }
@@ -177,14 +177,14 @@ public class PvPBot extends BotBrain {
         }
 
         // 9. Apply movement
-        setMovementInput(forward, strafe, false);
+        setMovementInput(forward, strafe);
         bot.setSprinting(sprint);
 
         // 10. Jump combat
         if (cfg.pvpStrafeEnabled && distance <= 4.0 && distance >= 2.0) {
             jumpCooldown--;
             if (jumpCooldown <= 0 && random.nextInt(8) == 0) {
-                setMovementInput(forward, strafe, true);
+                bot.setJumping(true);
                 jumpCooldown = 15 + random.nextInt(20);
             }
         }

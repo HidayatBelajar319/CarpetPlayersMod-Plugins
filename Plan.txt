@@ -237,3 +237,27 @@ ini model otomatis pilih modelnya sendiri jadi aman gak usah edit sendiri.
 dan dia Router nya bukan Local yak.
 
 dan ganti semua model OpenRouter menjadi hanya 1 yaitu model ID ini "openrouter/auto".
+ah dan openrouter itu kalo gak salah dia BaseURL nya "https://api.openrouter.ai/v1/"
+
+Tolong juga tambahin Fitur Kit Configurasi Bot dan Player(Jadi Plyaer juga bisa dapat kit).
+memakai Command
+/carpetplayers <kitp/kitb> <menu/kit1/kit2/kit3>
+tentu saja dengan singkat /cps dan /cp, nah sini aku jelasin tentang masing masing command ini:
+kitp singkatan dari Kit Player dan kitb singkatan dari Kit Bot.
+
+Nah disini jika kita membuka menu Kit Player maupun Kit Bot yang kebuka itu ialah Menu Chest(Double Chest) yang terisi dengan Button button item rename:
+Kit1
+Kit2
+Kit3
+Empty Kit dan seterusnya.
+
+
+Disini ktia bisa tambahin Kit dan rename kit contoh di menu gua rename kit 1 menjadi "Crystal Kit" nanti saat ingin menggunakan Kit itu Via Command nanti kita memakai:
+/carpetplayers <kitp/kitb> Crystal Kit
+
+jadi nanti Kitnya ikutan ke change tetapi karena kita memakai Spasi jadi harus "Crystal Kit"(/carpetplayers <kitp/kitb> "Crystal Kit") lebih tepatnya menggunakan simbol apalah nama nya itu.
+kitnya kita bisa configurasi dari hanya Mod identifikasi atau Melihat Inventory Pemain lalu akan memasukkan semua item yang dipakai atau ada di inventory pemain(maupun slot armor) akan di Sync sesuai kemauan user menggunakan command:
+/carpetplayers kitp save <namakit/kit1/kit2/kit3>
+atau bisa menggunakan lewat dari menu kita.
+
+jika tidak bias memakai Double Chest Inventory yaudah pake Menu Via aja.

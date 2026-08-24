@@ -136,9 +136,8 @@ public final class AIProviderManager {
             case "openrouter":
                 provider.name = "OpenRouter";
                 provider.baseUrl = "https://openrouter.ai/api/v1";
-                provider.model = "meta-llama/llama-3.1-8b-instruct:free";
-                provider.models.add("meta-llama/llama-3.1-8b-instruct:free");
-                provider.models.add("meta-llama/llama-3.3-70b-instruct");
+                provider.model = "openrouter/auto";
+                provider.models.add("openrouter/auto");
                 return provider;
             case "groq":
                 provider.name = "Groq";
@@ -146,6 +145,12 @@ public final class AIProviderManager {
                 provider.model = "llama-3.1-8b-instant";
                 provider.models.add("llama-3.1-8b-instant");
                 provider.models.add("llama-3.3-70b-versatile");
+                return provider;
+            case "orcarouter":
+                provider.name = "OrcaRouter";
+                provider.baseUrl = "https://api.orcarouter.ai/v1";
+                provider.model = "orcarouter/auto";
+                provider.models.add("orcarouter/auto");
                 return provider;
             case "local":
                 provider.name = "Local (Ollama)";

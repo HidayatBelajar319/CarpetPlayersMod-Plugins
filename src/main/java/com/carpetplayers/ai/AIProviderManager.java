@@ -138,9 +138,8 @@ public final class AIProviderManager {
             case "openrouter":
                 provider.name = "OpenRouter";
                 provider.baseUrl = "https://openrouter.ai/api/v1";
-                provider.model = "meta-llama/llama-3.1-8b-instruct:free";
-                provider.models.add("meta-llama/llama-3.1-8b-instruct:free");
-                provider.models.add("meta-llama/llama-3.3-70b-instruct");
+                provider.model = "openrouter/auto";
+                provider.models.add("openrouter/auto");
                 return provider;
             case "groq":
                 provider.name = "Groq";
@@ -318,11 +317,7 @@ public final class AIProviderManager {
                 break;
             case "openrouter":
                 preferred = new String[][]{
-                        // Free models first
-                        {"meta-llama/llama-3.1-8b-instruct:free",
-                         "google/gemma-2-9b-it:free",
-                         "mistralai/mistral-7b-instruct:free",
-                         "meta-llama/llama-3.3-70b-instruct:free"},
+                        {"openrouter/auto"}
                 };
                 break;
             case "orcarouter":

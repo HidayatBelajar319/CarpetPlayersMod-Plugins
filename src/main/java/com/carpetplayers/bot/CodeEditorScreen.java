@@ -1,18 +1,15 @@
 package com.carpetplayers.bot;
 
-import com.carpetplayers.config.ModConfig;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.TextComponent;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,9 +28,6 @@ import java.util.regex.Pattern;
  * Only available on Fabric client.
  */
 public class CodeEditorScreen extends Screen {
-
-    private static final ResourceLocation ARROW_LEFT = new ResourceLocation("minecraft", "icons/guis/container/inventory.png");
-    private static final ResourceLocation ARROW_RIGHT = new ResourceLocation("minecraft", "icons/guis/container/inventory.png");
 
     private final String filename;
     private String fileContent;
@@ -44,14 +39,14 @@ public class CodeEditorScreen extends Screen {
     private boolean modified;
 
     // Syntax highlighting colors
-    private static final Formatting KEY_COLOR = Formatting.AQUA;
-    private static final Formatting STRING_COLOR = Formatting.GREEN;
-    private static final Formatting NUMBER_COLOR = Formatting.GOLD;
-    private static final Formatting BOOLEAN_COLOR = Formatting.LIGHT_PURPLE;
-    private static final Formatting NULL_COLOR = Formatting.GRAY;
-    private static final Formatting BRACKET_COLOR = Formatting.WHITE;
-    private static final Formatting ERROR_COLOR = Formatting.RED;
-    private static final Formatting DEFAULT_COLOR = Formatting.WHITE;
+    private static final ChatFormatting KEY_COLOR = ChatFormatting.AQUA;
+    private static final ChatFormatting STRING_COLOR = ChatFormatting.GREEN;
+    private static final ChatFormatting NUMBER_COLOR = ChatFormatting.GOLD;
+    private static final ChatFormatting BOOLEAN_COLOR = ChatFormatting.LIGHT_PURPLE;
+    private static final ChatFormatting NULL_COLOR = ChatFormatting.GRAY;
+    private static final ChatFormatting BRACKET_COLOR = ChatFormatting.WHITE;
+    private static final ChatFormatting ERROR_COLOR = ChatFormatting.RED;
+    private static final ChatFormatting DEFAULT_COLOR = ChatFormatting.WHITE;
 
     private List<String> tabSuggestions;
     private int tabSuggestionIndex;
@@ -61,7 +56,7 @@ public class CodeEditorScreen extends Screen {
     private boolean caretVisible;
 
     public CodeEditorScreen(String filename) {
-        super(new Component("Config Editor"));
+        super(new TextComponent("Config Editor"));
         this.filename = filename;
         this.fileContent = loadFileContent(filename);
         this.displayContent = this.fileContent != null ? this.fileContent : "";
@@ -80,9 +75,9 @@ public class CodeEditorScreen extends Screen {
 
     private String loadFileContent(String filename) {
         try {
-            Path path = ModConfig.configFile.toPath().getParent().resolve("carpetplayers-config.json");
+            Path path = FabricLoader.getInstance().getConfigDir().resolve("carpetplayers-config.json");
             // Actually load from the correct config path
-            File configDir = ModConfig.configFile.getParentFile();
+            File configDir = FabricLoader.getInstance().getConfigDir().toFile();
             File file = new File(configDir, filename);
             if (!file.exists()) {
                 return null;
@@ -114,16 +109,18 @@ public class CodeEditorScreen extends Screen {
     private void calculateTabSuggestions() {
         tabSuggestions.clear();
         try {
-            JsonObject json = JsonParser.parseString(fileContent).getAsJsonObject();
+            JsonObject json = (JsonObject) new JsonParser().parse(fileContent);
             // Simple tab completion: show next valid key
             if (!partialKey.isEmpty()) {
-                for (String key : json.keySet()) {
-                    if (key.startsWith(partialKey)) {
-                        tabSuggestions.add(key);
+                for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+                    if (entry.getKey().startsWith(partialKey)) {
+                        tabSuggestions.add(entry.getKey());
                     }
                 }
             } else {
-                tabSuggestions.addAll(json.keySet());
+                for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
+                    tabSuggestions.add(entry.getKey());
+                }
             }
         } catch (Exception e) {
             // If JSON parse fails, show empty
@@ -190,7 +187,7 @@ public class CodeEditorScreen extends Screen {
 
             // Handle colons
             if (i < len && input.charAt(i) == ':') {
-                result.append(Formatting.YELLOW).append(input.charAt(i));
+                result.append(ChatFormatting.YELLOW).append(input.charAt(i));
                 i++;
                 continue;
             }
@@ -241,7 +238,7 @@ public class CodeEditorScreen extends Screen {
 
     private boolean jsonKeyExists(String key) {
         try {
-            JsonObject obj = JsonParser.parseString(fileContent).getAsJsonObject();
+            JsonObject obj = (JsonObject) new JsonParser().parse(fileContent);
             return obj.has(key);
         } catch (Exception e) {
             return false;
@@ -249,18 +246,18 @@ public class CodeEditorScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
         // Render background
-        renderBackground(guiGraphics);
+        renderBackground(poseStack);
 
         // Render file content with syntax highlighting
         String highlighted = applySyntaxHighlighting(displayContent);
 
         // Calculate visible area
-        int width = getWidth();
-        int height = getHeight();
+        int w = this.width;
+        int h = this.height;
         int textWidth = Math.max(highlighted.length() * 8, 200);
-        int visibleLines = (height - 40) / 10;
+        int visibleLines = (h - 40) / 10;
 
         // Render scrollable text
         int y = 10;
@@ -271,17 +268,10 @@ public class CodeEditorScreen extends Screen {
                 int lineY = y + (lineCount - scrollOffset) * 10;
                 // Render line number prefix
                 if (lineCount < 1000) {
-                    guiGraphics.drawString(formattedLineNumber(lineCount + 1), 5, lineY, Formatting.DARK_GRAY.getColor());
+                    font.draw(poseStack, formattedLineNumber(lineCount + 1), 5, lineY, ChatFormatting.DARK_GRAY.getColor());
                 }
                 // Render the line content
-                guiGraphics.drawString(line, 20, lineY, Formatting.WHITE.getColor());
-
-                // Highlight selection
-                if (selectionStart >= 0 && selectionEnd >= 0) {
-                    int selStart = Math.min(cursorPos, selectionEnd);
-                    int selEnd = Math.max(cursorPos, selectionEnd);
-                    // Simple selection highlighting
-                }
+                font.draw(poseStack, line, 20, lineY, ChatFormatting.WHITE.getColor());
             }
             lineCount++;
         }
@@ -290,50 +280,50 @@ public class CodeEditorScreen extends Screen {
         if (caretVisible) {
             int cursorX = 20 + Math.max(0, cursorPos - scrollOffset) * 8;
             int cursorY = 10 + (cursorPos - scrollOffset) * 10;
-            guiGraphics.drawString("|", cursorX, cursorY, Formatting.WHITE.getColor());
+            font.draw(poseStack, "|", cursorX, cursorY, ChatFormatting.WHITE.getColor());
         }
 
         // Render UI controls
-        renderButtons(guiGraphics, mouseX, mouseY);
+        renderButtons(poseStack, mouseX, mouseY);
     }
 
     private String formattedLineNumber(int line) {
-        return Formatting.DARK_GRAY + String.valueOf(line) + ": ";
+        return ChatFormatting.DARK_GRAY + String.valueOf(line) + ": ";
     }
 
-    private void renderButtons(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        int buttonY = getHeight() - 50;
+    private void renderButtons(PoseStack poseStack, int mouseX, int mouseY) {
+        int buttonY = this.height - 50;
         int buttonWidth = 60;
 
         // Save button
-        Button saveBtn = new Button(getWidth() / 2 - 100 - 5 - buttonWidth, buttonY, buttonWidth, 20,
-                "Save", onClick -> {
+        Button saveBtn = new Button(this.width / 2 - 100 - 5 - buttonWidth, buttonY, buttonWidth, 20,
+                new TextComponent("Save"), onClick -> {
             saveFile();
             modified = false;
-            close();
+            onClose();
         });
-        addRenderableWidget(saveBtn);
+        addButton(saveBtn);
 
         // Cancel button
-        Button cancelBtn = new Button(getWidth() / 2 + 5, buttonY, buttonWidth, 20,
-                "Cancel", onClick -> close());
-        addRenderableWidget(cancelBtn);
+        Button cancelBtn = new Button(this.width / 2 + 5, buttonY, buttonWidth, 20,
+                new TextComponent("Cancel"), onClick -> onClose());
+        addButton(cancelBtn);
 
         // Reload button
-        Button reloadBtn = new Button(getWidth() / 2 - 100 - 5 - buttonWidth, buttonY + 25, buttonWidth, 20,
-                "Reload", onClick -> {
+        Button reloadBtn = new Button(this.width / 2 - 100 - 5 - buttonWidth, buttonY + 25, buttonWidth, 20,
+                new TextComponent("Reload"), onClick -> {
             displayContent = loadFileContent(filename);
             if (displayContent != null) {
                 modified = false;
                 calculateTabSuggestions();
             }
         });
-        addRenderableWidget(reloadBtn);
+        addButton(reloadBtn);
     }
 
     private void saveFile() {
         try {
-            File configDir = ModConfig.configFile.getParentFile();
+            File configDir = FabricLoader.getInstance().getConfigDir().toFile();
             File file = new File(configDir, filename);
             Files.write(file.toPath(), displayContent.getBytes());
             modified = false;
@@ -345,7 +335,7 @@ public class CodeEditorScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == 256) { // Escape
-            close();
+            onClose();
             return true;
         }
         if (keyCode == 261) { // Up
@@ -417,20 +407,20 @@ public class CodeEditorScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         if (mouseButton == 0) {
             // Check if clicked on text area
-            if (mouseX > 15 && mouseX < getWidth() - 10 && mouseY > 10 && mouseY < getHeight() - 50) {
-                int clickedLine = (int) ((mouseY - 10 - scrollOffset) / 10);
+            if (mouseX > 15 && mouseX < this.width - 10 && mouseY > 10 && mouseY < this.height - 50) {
+                int clickedLineNum = (int) ((mouseY - 10 - scrollOffset) / 10);
                 String highlighted = applySyntaxHighlighting(displayContent);
                 String[] lines = highlighted.split("\n");
-                if (clickedLine < lines.length && clickedLine >= 0) {
+                if (clickedLineNum < lines.length && clickedLineNum >= 0) {
                     // Calculate cursor position based on click
                     int charOffset = (int) (mouseX - 20) / 8;
                     int charPos = 0;
-                    for (int i = 0; i < clickedLine.length() && charOffset > 0; i++) {
-                        char c = lines[clickedLine].charAt(i);
+                    for (int i = 0; i < lines[clickedLineNum].length() && charOffset > 0; i++) {
+                        char c = lines[clickedLineNum].charAt(i);
                         if (c == '\t') charOffset -= 2;
                         else charOffset--;
                     }
-                    cursorPos = charPos + clickedLine.length();
+                    cursorPos = charPos + lines[clickedLineNum].length();
                 }
             }
         }
@@ -438,9 +428,9 @@ public class CodeEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY) {
-        scrollOffset = Math.max(0, Math.min(scrollOffset + (int) mouseY, 
-            Math.max(0, countLines(displayContent) - ((getHeight() - 40) / 10))));
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        scrollOffset = Math.max(0, Math.min(scrollOffset + (int) -delta,
+            Math.max(0, countLines(displayContent) - ((this.height - 40) / 10))));
         return true;
     }
 
@@ -452,11 +442,6 @@ public class CodeEditorScreen extends Screen {
         return count;
     }
 
-    @Override
-    protected void containerTick() {
-        super.containerTick();
-        tick();
-    }
 }
 
 /**
@@ -464,7 +449,7 @@ public class CodeEditorScreen extends Screen {
  */
 class CodeEditorWidget extends Button {
     // Minimal widget - main editing happens in CodeEditorScreen
-    public CodeEditorWidget(int x, int y, int width, int height, Component message, OnPress onPress) {
+    public CodeEditorWidget(int x, int y, int width, int height, TextComponent message, OnPress onPress) {
         super(x, y, width, height, message, onPress);
     }
 }

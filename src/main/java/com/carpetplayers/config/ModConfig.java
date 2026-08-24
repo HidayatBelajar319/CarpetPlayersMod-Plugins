@@ -1,6 +1,7 @@
 package com.carpetplayers.config;
 
 import com.carpetplayers.CarpetPlayersMod;
+import com.carpetplayers.ai.AIConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -35,6 +36,9 @@ public class ModConfig {
     public int autoSaveIntervalMinutes = 5;    // auto-save interval in minutes
     public int maxCreditsPerAction = 5;    // max credits (thousands of tokens) per AI action
     public boolean creditTrackingEnabled = true;
+
+    // AI config (nested)
+    public AIConfig aiConfig = new AIConfig();
 
     // Waypoint settings
     public boolean deathWaypointEnabled = true;  // auto-create death waypoints

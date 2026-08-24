@@ -36,6 +36,11 @@ public class ModConfig {
     public int userMaxBots = 0;
     public boolean deathWaypointEnabled = true;
     public int maxWaypoints = 50;
+    public AIConfig aiConfig = new AIConfig();
+
+    public static class AIConfig {
+        public boolean offlineMode = false;
+    }
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static ModConfig instance = new ModConfig();
